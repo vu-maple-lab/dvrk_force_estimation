@@ -10,94 +10,136 @@ from dataset import indirectTestDataset, indirectDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 contact = 'with_contact'
-data = 'trocar'
+data = 'free_space'
 
 JOINTS = utils.JOINTS
-epoch_to_use = 0 #int(sys.argv[1])
-exp = sys.argv[1] #sys.argv[2]
+epoch_to_use = 0  # int(sys.argv[1])
+exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
-preprocess = 'filtered_torque'# sys.argv[4]
+preprocess = 'filtered_torque'  # sys.argv[4]
 is_rnn = net == 'lstm'
 if is_rnn:
     batch_size = 1
 else:
     batch_size = 8192
-root = Path('checkpoints' )
+root = Path('C://Users//SIMON_HAO//Documents//MAPLE//dvrk_force_estimation')
 
 if seal == 'seal':
     fs = 'free_space'
-elif seal =='base':
+elif seal == 'base':
     fs = 'no_cannula'
 
 max_torque = torch.tensor(utils.max_torque).to(device)
-    
+range_torque = torch.tensor(utils.range_torque).to(device)
+print('device is: ', device)
+
+#########################################################
+pos_size = 6
+vel_size = 6
+tor_size = 1
+
+lstm_warmup = 2
+lstm_num_layers = 1
+lstm_input_size = pos_size + vel_size
+lstm_hidden_size = 256
+# ATTN
+torch_attn = True
+ATTN_num_layers = 1
+ATTN_feat_dim = pos_size + vel_size
+ATTN_embedding_dim = 256
+ATTN_interm_dim = 512
+ATTN_nhead = 4
+ATTN_dropout = 0
+rt_test = True
+
+
+##########################################################
+
+
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../data/csv/train/' + data + '/'
+        path = '../data_7_28/csv/train/' + data + '/'
     elif exp == 'val':
-        path = '../data/csv/val/' + data + '/'
-    elif exp =='test':
-        path = '../data/csv/test/' + data + '/no_contact/'
+        path = '../data_7_28/csv/val/' + data + '/'
+    elif exp == 'test':
+        path = '../data_7_28/csv/test/' + data + '/no_contact/'
     else:
-        path = '../data/csv/test/' + data + '/' + contact + '/' + exp + '/'
-    in_joints = [0,1,2,3,4,5]
+        path = '../data_7_28/csv/test/' + data + '/' + contact + '/' + exp + '/'
+        path = '../data_7_28/csv/test/' + data + '/' + contact + '/' + exp + '/'
+    in_joints = [0, 1, 2, 3, 4, 5]
 
     if is_rnn:
         window = 1000
     else:
         window = utils.WINDOW
 
-    
     if is_rnn:
         dataset = indirectDataset(path, window, utils.SKIP, in_joints, is_rnn=is_rnn)
     else:
         dataset = indirectTestDataset(path, window, utils.SKIP, in_joints, is_rnn=is_rnn)
-    loader = DataLoader(dataset=dataset, batch_size = batch_size, shuffle=False, drop_last=False)
+    loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False, drop_last=False)
 
-    model_root = []    
+    model_root = []
     for j in range(JOINTS):
-        folder = fs + str(j)        
+        folder = fs + str(j)
+        print("###### the name of loaded model is: #########", root / preprocess / net / folder)
         model_root.append(root / preprocess / net / folder)
-        
+
     networks = []
     for j in range(JOINTS):
         if is_rnn:
-            networks.append(torqueLstmNetwork(batch_size, device).to(device))
+            networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
+            # model = LSTM_ATTN_Encoder_Only(input_size=lstm_input_size, hidden_size=lstm_hidden_size,
+            #                                num_lstm_layers=lstm_num_layers,
+            #                                num_attn_layers=ATTN_num_layers, attn_nhead=ATTN_nhead,
+            #                                attn_hidden_dim=ATTN_interm_dim,
+            #                                output_size=1, device=device, torch_attn=torch_attn,
+            #                                rt_test=rt_test)
+            # networks.append(model.to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 
     for j in range(JOINTS):
+        # print("###### the name of loaded model is: #########", root / preprocess / net / folder)
         utils.load_prev(networks[j], model_root[j], epoch_to_use)
         print("Loaded a " + str(j) + " model")
 
-#    loss_fn = torch.nn.MSELoss()
-#    all_loss = 0
+    loss_fn = torch.nn.MSELoss()
+    all_loss = 0
     all_pred = torch.tensor([])
     all_time = torch.tensor([])
 
+    # for i, (position, velocity, torque, time) in enumerate(loader):
     for i, (position, velocity, torque, jacobian, time) in enumerate(loader):
         position = position.to(device)
         velocity = velocity.to(device)
-        if is_rnn: 
+        if is_rnn:
             posvel = torch.cat((position, velocity), axis=2).contiguous()
         else:
             posvel = torch.cat((position, velocity), axis=1).contiguous()
+            # posvel = position
 
         if is_rnn:
-            time = time.permute((1,0))
+            time = time.permute((1, 0))
         torque = torque.squeeze()
 
         cur_pred = torch.zeros(torque.size())
         for j in range(JOINTS):
-            pred = networks[j](posvel).squeeze().detach()
-#            pred = pred * max_torque[j]
-            cur_pred[:,j] = pred.cpu()
+            hidden = None
 
-#        loss = loss_fn(cur_pred, torque)
-#        all_loss += loss.item()
-                
+            # pred, _ = networks[j](posvel, hidden)
+            pred = networks[j](posvel)
+            pred = pred.squeeze().detach()
+            ##############################
+            pred = pred * range_torque[j]
+            ##############################
+            cur_pred[:, j] = pred.cpu()
+
+        loss = loss_fn(cur_pred, torque)
+        all_loss += loss.item()
+
         if is_rnn:
             time = time.squeeze(-1)
 
@@ -105,9 +147,11 @@ def main():
         all_pred = torch.cat((all_pred, cur_pred.cpu()), axis=0) if all_pred.size() else cur_pred.cpu()
 
     all_pred = torch.cat((all_time.unsqueeze(1), all_pred), axis=1)
+    print(path + net + '_' + seal + '_pred_' + preprocess + '.csv', all_pred.numpy())
     np.savetxt(path + net + '_' + seal + '_pred_' + preprocess + '.csv', all_pred.numpy())
-        
-#   print('Loss: ', all_loss)
+
+    print('Loss: ', all_loss)
+
 
 if __name__ == "__main__":
     main()
