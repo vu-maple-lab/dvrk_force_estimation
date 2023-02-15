@@ -5,7 +5,6 @@ import numpy as np
 import math
 import copy
 from torch.nn import functional as F
-from einops import rearrange
 
 # Network maps joint position and velocity to torque
 class fsNetwork(nn.Module):

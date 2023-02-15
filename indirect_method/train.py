@@ -13,9 +13,9 @@ from os.path import join
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 data = sys.argv[1]
-train_path = join('..', 'data_7_28', 'csv', 'train', data)
-val_path = join('..', 'data_7_28', 'csv', 'val', data)
-root = Path('C://Users//SIMON_HAO//Documents//MAPLE//dvrk_force_estimation')
+train_path = join('..', '..', 'csv', 'train', data)
+val_path = join('..', '..', 'csv', 'val', data)
+root = Path('../..')
 is_rnn = bool(int(sys.argv[2]))
 if is_rnn:
     folder = 'lstm/' + data
