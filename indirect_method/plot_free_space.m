@@ -16,7 +16,7 @@ if strcmp(test_folder, 'test')
     torque_path = ['../../csv/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
 else
     joint_path = ['../../csv/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../../csv/', test_folder, '/', data, '/', rnn, network];
+    torque_path = ['../../csv/', test_folder, '/', data, '/', ff, network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
