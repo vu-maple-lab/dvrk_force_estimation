@@ -23,7 +23,7 @@ if is_rnn:
     batch_size = 1
 else:
     batch_size = 8192
-root = Path('C://Users//SIMON_HAO//Documents//MAPLE//dvrk_force_estimation')
+root = Path('../..')
 
 if seal == 'seal':
     fs = 'free_space'
@@ -34,40 +34,18 @@ max_torque = torch.tensor(utils.max_torque).to(device)
 range_torque = torch.tensor(utils.range_torque).to(device)
 print('device is: ', device)
 
-#########################################################
-pos_size = 6
-vel_size = 6
-tor_size = 1
-
-lstm_warmup = 2
-lstm_num_layers = 1
-lstm_input_size = pos_size + vel_size
-lstm_hidden_size = 256
-# ATTN
-torch_attn = True
-ATTN_num_layers = 1
-ATTN_feat_dim = pos_size + vel_size
-ATTN_embedding_dim = 256
-ATTN_interm_dim = 512
-ATTN_nhead = 4
-ATTN_dropout = 0
-rt_test = True
-
-
-##########################################################
-
 
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../data_7_28/csv/train/' + data + '/'
+        path = '../../csv/train/' + data + '/'
     elif exp == 'val':
-        path = '../data_7_28/csv/val/' + data + '/'
+        path = '../../csv/val/' + data + '/'
     elif exp == 'test':
-        path = '../data_7_28/csv/test/' + data + '/no_contact/'
+        path = '../../csv/test/' + data + '/no_contact/'
     else:
-        path = '../data_7_28/csv/test/' + data + '/' + contact + '/' + exp + '/'
-        path = '../data_7_28/csv/test/' + data + '/' + contact + '/' + exp + '/'
+        path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
+        path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
     in_joints = [0, 1, 2, 3, 4, 5]
 
     if is_rnn:
@@ -91,13 +69,6 @@ def main():
     for j in range(JOINTS):
         if is_rnn:
             networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
-            # model = LSTM_ATTN_Encoder_Only(input_size=lstm_input_size, hidden_size=lstm_hidden_size,
-            #                                num_lstm_layers=lstm_num_layers,
-            #                                num_attn_layers=ATTN_num_layers, attn_nhead=ATTN_nhead,
-            #                                attn_hidden_dim=ATTN_interm_dim,
-            #                                output_size=1, device=device, torch_attn=torch_attn,
-            #                                rt_test=rt_test)
-            # networks.append(model.to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 
