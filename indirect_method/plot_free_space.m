@@ -12,11 +12,11 @@ file = 0;
 exp = ['exp',num2str(file)];
 
 if strcmp(test_folder, 'test')
-    joint_path = ['../data/csv/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
-    torque_path = ['../data/csv/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
+    joint_path = ['../../csv/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
+    torque_path = ['../../csv/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
 else
-    joint_path = ['../data/csv/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../data/csv/', test_folder, '/', data, '/', rnn, network];
+    joint_path = ['../../csv/', test_folder, '/', data, '/joints/'];
+    torque_path = ['../../csv/', test_folder, '/', data, '/', rnn, network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
