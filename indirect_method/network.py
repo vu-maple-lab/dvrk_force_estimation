@@ -43,31 +43,21 @@ class torqueLstmNetwork(nn.Module):
         self.batch_size = batch_size
         self.device = device
         self.lstm = nn.LSTM(joints * 2, hidden_dim, num_layers, batch_first=True)
-        self.linear0 = nn.Linear(hidden_dim, int(hidden_dim / 2))
-        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead)
-        self.linear1 = nn.Linear(int(hidden_dim / 2), 1)
-
-        self.linear3 = nn.Linear(hidden_dim, 1)
-
+        self.linear0 = nn.Linear(joints*2, hidden_dim)
+        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True)
+        self.linear1 = nn.Linear(hidden_dim, int(hidden_dim/2))
+        self.linear2 = nn.Linear(int(hidden_dim / 2), 1)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.hidden = self.init_hidden(self.batch_size, self.device)
 
     def forward(self, x):
-        # self.hidden = self.init_hidden(x.size()[0], self.device)
-        x, self.hidden = self.lstm(x, self.hidden)
-        #        x, self.hidden = self.lstm(x, self.hidden)
-        #        self.hidden = tuple(state.detach() for state in self.hidden)
-
-        x = rearrange(x, 'bs sl fe -> sl bs fe')
-        x, _ = self.attn(query=x, key=self.hidden[0], value=self.hidden[0])
-        x = rearrange(x, 'bs sl fe -> sl bs fe')
-
-        # x = self.linear3(x)
-
         x = self.linear0(x)
         x = self.relu(x)
+        x, _ = self.attn(query=x, key=x, value=x)
         x = self.linear1(x)
+        x = self.relu(x)
+        x = self.linear2(x)
         x = self.tanh(x)
         return x
 

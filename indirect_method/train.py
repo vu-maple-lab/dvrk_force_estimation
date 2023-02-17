@@ -3,7 +3,7 @@ import tqdm
 import torch
 from pathlib import Path
 from dataset import indirectDataset
-from network import torqueLstmNetwork, fsNetwork, LSTM_ATTN_Encoder_Only
+from network import torqueLstmNetwork, fsNetwork
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -24,7 +24,7 @@ else:
 range_torque = torch.tensor(max_torque).to(device)
 
 lr = 1e-3  # TODO
-batch_size = 128
+batch_size = 64
 epochs = 200
 validate_each = 5
 use_previous_model = False
@@ -46,21 +46,16 @@ tor_size = 1
 lstm_warmup = 2
 lstm_num_layers = 1
 lstm_input_size = pos_size + vel_size
-lstm_hidden_size = 256
-# ATTN
-torch_attn = True
-ATTN_num_layers = 1
-ATTN_feat_dim = pos_size + vel_size
-ATTN_embedding_dim = 256
-ATTN_interm_dim = 512
-ATTN_nhead = 1
-ATTN_dropout = 0
+lstm_hidden_size = 128
+
+ATTN_nhead = 2
+
 ##########################################################
 
 
 for j in range(JOINTS):
     if is_rnn:
-        window = 2000
+        window = 1000
         networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
         # model = LSTM_ATTN_Encoder_Only(input_size=lstm_input_size, hidden_size=lstm_hidden_size,
         #                                num_lstm_layers=lstm_num_layers,

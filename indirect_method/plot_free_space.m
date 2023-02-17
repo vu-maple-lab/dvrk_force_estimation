@@ -1,7 +1,7 @@
 data = 'free_space';
 contact = 'no_contact';
-test_folder = 'test';
-rnn = 'lstm';
+test_folder = 'val';
+ff = 'lstm';
 network = '_seal_pred_filtered_torque.csv';
 
 %loss = 0;

@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from dataset import indirectTestDataset, indirectDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-contact = 'with_contact'
+contact = 'no_contact'
 data = 'free_space'
 
 JOINTS = utils.JOINTS
@@ -68,7 +68,7 @@ def main():
     networks = []
     for j in range(JOINTS):
         if is_rnn:
-            networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
+            networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=2).to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 
