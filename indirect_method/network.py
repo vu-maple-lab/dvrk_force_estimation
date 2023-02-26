@@ -59,10 +59,6 @@ class torqueLstmNetwork(nn.Module):
         #        x, self.hidden = self.lstm(x, self.hidden)
         #        self.hidden = tuple(state.detach() for state in self.hidden)
 
-        x = rearrange(x, 'bs sl fe -> sl bs fe')
-        x, _ = self.attn(query=x, key=self.hidden[0], value=self.hidden[0])
-        x = rearrange(x, 'bs sl fe -> sl bs fe')
-
         # x = self.linear3(x)
 
         x = self.linear0(x)
@@ -74,6 +70,27 @@ class torqueLstmNetwork(nn.Module):
     def init_hidden(self, batch_size, device):
         return (torch.zeros(self.num_layers, batch_size, self.hidden_dim).float().to(device),
                 torch.zeros(self.num_layers, batch_size, self.hidden_dim).float().to(device))
+
+
+# Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
+class torqueTransNetwork(nn.Module):
+    def __init__(self, device, attn_nhead, joints=6, hidden_dim=64):
+        super(torqueTransNetwork, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.device = device
+        self.linear0 = nn.Linear(joints*2, hidden_dim)
+        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True)
+        self.linear1 = nn.Linear(hidden_dim, 1)
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+
+    def forward(self, x):
+        x = self.linear0(x)
+        x = self.relu(x)
+        x, _ = self.attn(query=x, key=x, value=x)
+        x = self.linear1(x)
+        x = self.tanh(x)
+        return x
 
 
 # Network to do direct velocity to force estimate

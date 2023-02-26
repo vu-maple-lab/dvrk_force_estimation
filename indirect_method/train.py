@@ -3,7 +3,7 @@ import tqdm
 import torch
 from pathlib import Path
 from dataset import indirectDataset
-from network import torqueLstmNetwork, fsNetwork, LSTM_ATTN_Encoder_Only
+from network import torqueLstmNetwork, fsNetwork, torqueTransNetwork
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -13,8 +13,8 @@ from os.path import join
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 data = sys.argv[1]
-train_path = join('..', '..', 'csv', 'train', data)
-val_path = join('..', '..', 'csv', 'val', data)
+train_path = join('..', '..', 'data_2_23', 'csv_si', 'train', data)
+val_path = join('..', '..', 'data_2_23', 'csv_si', 'val', data)
 root = Path('../..')
 is_rnn = bool(int(sys.argv[2]))
 if is_rnn:
@@ -23,9 +23,9 @@ else:
     folder = 'ff/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
-lr = 1e-3  # TODO
-batch_size = 128
-epochs = 200
+lr = 3e-3  # TODO
+batch_size = 32764
+epochs = 1000
 validate_each = 5
 use_previous_model = False
 epoch_to_use = 40  # TODO
@@ -39,29 +39,15 @@ schedulers = []
 model_root = []
 
 #########################################################
-pos_size = 6
-vel_size = 6
-tor_size = 1
-
-lstm_warmup = 2
-lstm_num_layers = 1
-lstm_input_size = pos_size + vel_size
-lstm_hidden_size = 256
-# ATTN
-torch_attn = True
-ATTN_num_layers = 1
-ATTN_feat_dim = pos_size + vel_size
-ATTN_embedding_dim = 256
-ATTN_interm_dim = 512
 ATTN_nhead = 1
-ATTN_dropout = 0
 ##########################################################
 
 
 for j in range(JOINTS):
     if is_rnn:
-        window = 2000
-        networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
+        window = 1000
+        # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
+        networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
         # model = LSTM_ATTN_Encoder_Only(input_size=lstm_input_size, hidden_size=lstm_hidden_size,
         #                                num_lstm_layers=lstm_num_layers,
         #                                num_attn_layers=ATTN_num_layers, attn_nhead=ATTN_nhead,
@@ -86,7 +72,7 @@ loss_fn = torch.nn.MSELoss()
 
 for j in range(JOINTS):
     try:
-        model_root.append(root / "filtered_torque" / (folder + str(j)))
+        model_root.append(root / "filtered_torque_si" / (folder + str(j)))
         model_root[j].mkdir(mode=0o777, parents=False)
     except OSError:
         print("Model path exists")

@@ -17,7 +17,7 @@ epoch_to_use = 0  # int(sys.argv[1])
 exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
-preprocess = 'filtered_torque'  # sys.argv[4]
+preprocess = 'filtered_torque_si'  # sys.argv[4]
 is_rnn = net == 'lstm'
 if is_rnn:
     batch_size = 1
@@ -31,18 +31,19 @@ elif seal == 'base':
     fs = 'no_cannula'
 
 max_torque = torch.tensor(utils.max_torque).to(device)
-range_torque = torch.tensor(utils.range_torque).to(device)
 print('device is: ', device)
 
+ATTN_nhead=1
 
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../../csv/train/' + data + '/'
+        path = '../../data_2_23/csv_si/train/' + data + '/'
     elif exp == 'val':
-        path = '../../csv/val/' + data + '/'
+        path = '../../data_2_23/csv_si/val/' + data + '/'
     elif exp == 'test':
-        path = '../../csv/test/' + data + '/no_contact/'
+        # path = '../../csv_si/test/' + data + '/no_contact/'
+        path = '../../data_2_23/csv_si/test/' + data + '/'
     else:
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
@@ -68,7 +69,8 @@ def main():
     networks = []
     for j in range(JOINTS):
         if is_rnn:
-            networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
+            networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead).to(device))
+            # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 
@@ -104,7 +106,7 @@ def main():
             pred = networks[j](posvel)
             pred = pred.squeeze().detach()
             ##############################
-            pred = pred * range_torque[j]
+            pred = pred * max_torque[j]
             ##############################
             cur_pred[:, j] = pred.cpu()
 

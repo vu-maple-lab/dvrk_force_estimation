@@ -7,10 +7,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-max_torque = (torch.tensor([3.1051168, 2.5269854, 8.118658, 0.06744864, 0.1748129, 0.14781484, 0.08568161]))
-min_torque = (torch.tensor([-3.1137438, -3.1547165, -9.27689, -0.13118862, -0.16299911, -0.12941329,  -0.08511973]))
-range_torque = (max_torque - min_torque)/2 + 0.1*(max_torque - min_torque)
-max_torque = [3.32, 3.32, 9.88, 0.344, 0.344, 0.344]
+max_torque = [21.0000, 30.0000, 21.0000, 0.6000, 0.6000, 0.6000]
 
 JOINTS = 6
 WINDOW = 30
@@ -18,7 +15,6 @@ SKIP = 1
 
 def nrmse_loss(y_hat, y, j=0, verbose=False):
     if verbose:
-        print(max_torque[j], min_torque[j])
         print(y.max(axis=0).values, y.min(axis=0).values)
         print(y_hat.max(axis=0).values, y_hat.min(axis=0).values)
     denominator = y.max(axis=0).values-y.min(axis=0).values
