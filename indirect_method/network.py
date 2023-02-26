@@ -46,9 +46,6 @@ class torqueLstmNetwork(nn.Module):
         self.linear0 = nn.Linear(hidden_dim, int(hidden_dim / 2))
         self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead)
         self.linear1 = nn.Linear(int(hidden_dim / 2), 1)
-
-        self.linear3 = nn.Linear(hidden_dim, 1)
-
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.hidden = self.init_hidden(self.batch_size, self.device)
@@ -56,10 +53,7 @@ class torqueLstmNetwork(nn.Module):
     def forward(self, x):
         # self.hidden = self.init_hidden(x.size()[0], self.device)
         x, self.hidden = self.lstm(x, self.hidden)
-        #        x, self.hidden = self.lstm(x, self.hidden)
         #        self.hidden = tuple(state.detach() for state in self.hidden)
-
-        # x = self.linear3(x)
 
         x = self.linear0(x)
         x = self.relu(x)

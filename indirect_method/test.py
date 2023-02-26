@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from dataset import indirectTestDataset, indirectDataset
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-contact = 'with_contact'
+contact = 'no_contact'
 data = 'free_space'
 
 JOINTS = utils.JOINTS

@@ -1,8 +1,14 @@
 data = 'free_space';
 contact = 'no_contact';
+<<<<<<< HEAD
 test_folder = 'test';
 rnn = 'lstm';
 network = '_seal_pred_filtered_torque_si.csv';
+=======
+test_folder = 'val';
+ff = 'lstm';
+network = '_seal_pred_filtered_torque.csv';
+>>>>>>> bc9b0101ccfbf443519159f8c1fe8b8e4c377f93
 
 %loss = 0;
 loss = [0,0,0,0];
