@@ -48,13 +48,6 @@ for j in range(JOINTS):
         window = 1000
         # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
         networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
-        # model = LSTM_ATTN_Encoder_Only(input_size=lstm_input_size, hidden_size=lstm_hidden_size,
-        #                                num_lstm_layers=lstm_num_layers,
-        #                                num_attn_layers=ATTN_num_layers, attn_nhead=ATTN_nhead,
-        #                                attn_hidden_dim=ATTN_interm_dim,
-        #                                output_size=1, device=device, torch_attn=torch_attn,
-        #                                rt_test=False)
-        # networks.append(model.to(device))
     else:
         window = WINDOW
         networks.append(fsNetwork(window))
@@ -115,7 +108,6 @@ for e in range(epoch, epochs + 1):
         for j in range(JOINTS):
             hidden = None
             # pred, _ = networks[j](posvel, hidden) * range_torque[j]
-            # pred = networks[j](posvel)  # * range_torque[j]
             pred = networks[j](posvel) * range_torque[j]
             # print("#########pred shape#########:", pred.shape) # [128, 1] this 128 is not batchsize, that's the torque size
             if is_rnn:
@@ -162,7 +154,6 @@ for e in range(epoch, epochs + 1):
             for j in range(JOINTS):
                 hidden = None
                 # pred, _ = networks[j](posvel, hidden) * range_torque
-                # pred = networks[j](posvel)  # * range_torque[j]
                 pred = networks[j](posvel) * range_torque[j]
                 # print("#########pred shape#########:", pred.shape) # 128, 1
                 if is_rnn:
