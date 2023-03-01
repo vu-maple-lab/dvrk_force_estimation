@@ -16,22 +16,19 @@ data = sys.argv[1]
 train_path = join('..', '..', 'data_2_23', 'csv_si', 'train', data)
 val_path = join('..', '..', 'data_2_23', 'csv_si', 'val', data)
 root = Path('../..')
-is_rnn = bool(int(sys.argv[2]))
-if is_rnn:
-    folder = 'lstm/' + data
-else:
-    folder = 'ff/' + data
+network_architecture = sys.argv[2]
+folder = network_architecture + '/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
-lr = 3e-3  # TODO
-batch_size = 32764
-epochs = 1000
+lr = 1e-2  # TODO
+batch_size = 128
+epochs = 2000
 validate_each = 5
 use_previous_model = False
 epoch_to_use = 40  # TODO
 in_joints = [0, 1, 2, 3, 4, 5]
 f = False
-print('Running for is_rnn value: ', is_rnn)
+print('Running for is_rnn value: ', network_architecture)
 
 networks = []
 optimizers = []
@@ -43,11 +40,17 @@ ATTN_nhead = 1
 ##########################################################
 
 
+is_rnn = False
+
 for j in range(JOINTS):
-    if is_rnn:
+    if network_architecture == 'lstm':
         window = 1000
-        # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
+        networks.append(torqueLstmNetwork(batch_size, device, is_train=True))
+        is_rnn = True
+    elif network_architecture == 'attn':
+        window = 1000
         networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
+        is_rnn = True
     else:
         window = WINDOW
         networks.append(fsNetwork(window))

@@ -1,15 +1,9 @@
 data = 'free_space';
 contact = 'no_contact';
-<<<<<<< HEAD
-test_folder = 'test';
-rnn = 'lstm';
-network = '_seal_pred_filtered_torque_si.csv';
-=======
 test_folder = 'val';
-ff = 'lstm';
-network = '_seal_pred_filtered_torque.csv';
->>>>>>> bc9b0101ccfbf443519159f8c1fe8b8e4c377f93
-
+rnn = 'attn';
+network = '_seal_pred_filtered_torque_si.csv';
+ 
 %loss = 0;
 loss = [0,0,0,0];
 
@@ -21,10 +15,10 @@ if strcmp(test_folder, 'test')
 %     joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
 %     torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
       joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/joints/'];
-      torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', 'lstm', network];
+      torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', rnn, network];
 else
     joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', 'lstm', network];
+    torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', rnn, network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
@@ -83,54 +77,3 @@ title('joint 6')
 plot(torque_data(:, 1), torque_data(:,7), 'r')
 legend('measured', 'predicted')
 
-
-
-% subplot(2,3,1)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,14), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,2), 'r')
-% legend('measured', 'predicted')
-% title(data)
-% hold off
-% subplot(2,3,2)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,15), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,3), 'r')
-% legend('measured', 'predicted')
-% title('Torque')
-% hold off
-% subplot(2,3,3)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,16), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,4), 'r')
-% legend('measured', 'predicted')
-% title('Torque')
-% hold off
-% subplot(2,3,4)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,17), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,5), 'r')
-% legend('measured', 'predicted')
-% title('Torque')
-% hold off
-% subplot(2,3,5)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,18), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,6), 'r')
-% legend('measured', 'predicted')
-% title('Torque')
-% hold off
-% subplot(2,3,6)
-% plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,19), 'b')
-% title(data)
-% hold on
-% plot(torque_data(:, 1), torque_data(:,7), 'r')
-% legend('measured', 'predicted')
-% title('Torque')
-% hold off
-%end

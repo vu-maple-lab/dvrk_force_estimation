@@ -36,7 +36,7 @@ class fsNetwork(nn.Module):
 
 # Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
 class torqueLstmNetwork(nn.Module):
-    def __init__(self, batch_size, device, attn_nhead, joints=6, hidden_dim=256, num_layers=1):
+    def __init__(self, batch_size, device, joints=6, hidden_dim=256, num_layers=1, is_train=False):
         super(torqueLstmNetwork, self).__init__()
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim
@@ -44,16 +44,16 @@ class torqueLstmNetwork(nn.Module):
         self.device = device
         self.lstm = nn.LSTM(joints * 2, hidden_dim, num_layers, batch_first=True)
         self.linear0 = nn.Linear(hidden_dim, int(hidden_dim / 2))
-        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead)
         self.linear1 = nn.Linear(int(hidden_dim / 2), 1)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.hidden = self.init_hidden(self.batch_size, self.device)
+        self.is_train = is_train
 
     def forward(self, x):
-        # self.hidden = self.init_hidden(x.size()[0], self.device)
+        if self.is_train:
+            self.hidden = self.init_hidden(x.size()[0], self.device)
         x, self.hidden = self.lstm(x, self.hidden)
-        #        self.hidden = tuple(state.detach() for state in self.hidden)
 
         x = self.linear0(x)
         x = self.relu(x)
@@ -68,20 +68,27 @@ class torqueLstmNetwork(nn.Module):
 
 # Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
 class torqueTransNetwork(nn.Module):
-    def __init__(self, device, attn_nhead, joints=6, hidden_dim=64):
+    def __init__(self, device, attn_nhead, joints=6, hidden_dim=128):
         super(torqueTransNetwork, self).__init__()
         self.hidden_dim = hidden_dim
         self.device = device
-        self.linear0 = nn.Linear(joints*2, hidden_dim)
+        self.lineark = nn.Linear(joints*2, hidden_dim)
+        self.linearq = nn.Linear(joints*2, hidden_dim)
+        self.linearv = nn.Linear(joints*2, hidden_dim)
         self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True)
         self.linear1 = nn.Linear(hidden_dim, 1)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
     def forward(self, x):
-        x = self.linear0(x)
-        x = self.relu(x)
-        x, _ = self.attn(query=x, key=x, value=x)
+        k = self.lineark(x)
+        q = self.linearq(x)
+        v = self.linearv(x)
+        
+        k = self.relu(k)
+        q = self.relu(q)
+        v = self.relu(v)
+        x, _ = self.attn(query=q, key=k, value=v)
         x = self.linear1(x)
         x = self.tanh(x)
         return x

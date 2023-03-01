@@ -77,6 +77,8 @@ class indirectTestDataset(indirectDataset):
         end = idx + self.window * self.skip 
         position, velocity, torque, time = self.genitem(idx, end)
         return position, velocity, torque, time
+
+
     
 class indirectTrocarDataset(indirectDataset):
     def __init__(self, path, window, skip, indices = [0,1,2,3,4,5], num=1e9, seal='seal', filter_signal=False, net='ff'):

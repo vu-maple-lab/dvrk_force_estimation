@@ -18,17 +18,17 @@ exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
 preprocess = 'filtered_torque_si'  # sys.argv[4]
-is_rnn = net == 'lstm'
+folder = net + '/' + data
+is_rnn = net != 'ff'
 if is_rnn:
     batch_size = 1
 else:
     batch_size = 8192
 root = Path('../..')
 
+fs = 'no_cannula'
 if seal == 'seal':
     fs = 'free_space'
-elif seal == 'base':
-    fs = 'no_cannula'
 
 max_torque = torch.tensor(utils.max_torque).to(device)
 print('device is: ', device)
@@ -68,11 +68,13 @@ def main():
 
     networks = []
     for j in range(JOINTS):
-        if is_rnn:
+        if net == 'lstm':
+            networks.append(torqueLstmNetwork(batch_size, device).to(device))
+        elif net == 'attn':
             networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead).to(device))
-            # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
         else:
             networks.append(fsNetwork(window).to(device))
+
 
     for j in range(JOINTS):
         # print("###### the name of loaded model is: #########", root / preprocess / net / folder)
