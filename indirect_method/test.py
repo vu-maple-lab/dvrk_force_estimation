@@ -17,8 +17,10 @@ epoch_to_use = 0  # int(sys.argv[1])
 exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
-preprocess = 'filtered_torque_si'  # sys.argv[4]
-is_rnn = net == 'lstm'
+# preprocess = 'filtered_torque_3_16'  # sys.argv[4]
+preprocess = 'filtered_torque_si_3_15'  # sys.argv[4]
+# is_rnn = net == 'lstm'
+is_rnn = 1
 if is_rnn:
     batch_size = 1
 else:
@@ -38,12 +40,15 @@ ATTN_nhead=1
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../../data_2_23/csv_si/train/' + data + '/'
+        # path = '../../dvrk-3-16/csv/train/' + data + '/'
+        path = '../../dvrk-si-3-15/csv_si/train/' + data + '/'
     elif exp == 'val':
-        path = '../../data_2_23/csv_si/val/' + data + '/'
+        # path = '../../dvrk-3-16/csv/val/' + data + '/'
+        path = '../../dvrk-si-3-15/csv_si/val/' + data + '/'
     elif exp == 'test':
         # path = '../../csv_si/test/' + data + '/no_contact/'
-        path = '../../data_2_23/csv_si/test/' + data + '/'
+        # path = '../../dvrk-3-16/csv/test/' + data + '/'
+        path = '../../dvrk-si-3-15/csv_si/test/' + data + '/'
     else:
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
@@ -69,8 +74,8 @@ def main():
     networks = []
     for j in range(JOINTS):
         if is_rnn:
-            networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead).to(device))
-            # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
+            # networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead).to(device))
+            networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 

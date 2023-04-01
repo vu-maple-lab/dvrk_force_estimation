@@ -1,14 +1,8 @@
 data = 'free_space';
 contact = 'no_contact';
-<<<<<<< HEAD
-test_folder = 'test';
-rnn = 'lstm';
-network = '_seal_pred_filtered_torque_si.csv';
-=======
 test_folder = 'val';
-ff = 'lstm';
-network = '_seal_pred_filtered_torque.csv';
->>>>>>> bc9b0101ccfbf443519159f8c1fe8b8e4c377f93
+rnn = 'lstm';
+network = '_seal_pred_filtered_torque_3_16.csv';
 
 %loss = 0;
 loss = [0,0,0,0];
@@ -20,11 +14,11 @@ exp = ['exp',num2str(file)];
 if strcmp(test_folder, 'test')
 %     joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
 %     torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
-      joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/joints/'];
-      torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', 'lstm', network];
+      joint_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/joints/'];
+      torque_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/', 'lstm', network];
 else
-    joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', 'lstm', network];
+    joint_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/joints/'];
+    torque_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/', 'lstm', network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
@@ -33,11 +27,17 @@ torque_data = readmatrix(torque_path);
 measured_torque = joint_data(:,14:16);
 fs_pred_torque = torque_data(:,2:4);
 loss(file+1) = mean(sqrt(mean((measured_torque(1:length(fs_pred_torque),:) - fs_pred_torque).^2)));
+loss_joint1 = mean(sqrt(mean((measured_torque(1:length(fs_pred_torque),1) - fs_pred_torque(:,1)).^2)));
+loss_joint2 = mean(sqrt(mean((measured_torque(1:length(fs_pred_torque),2) - fs_pred_torque(:,2)).^2)));
+loss_joint3 = mean(sqrt(mean((measured_torque(1:length(fs_pred_torque),3) - fs_pred_torque(:,3)).^2)));
+loss_joint4 = mean(sqrt(mean((joint_data(1:length(fs_pred_torque),17) - torque_data(:,5)).^2)));
+loss_joint5 = mean(sqrt(mean((joint_data(1:length(fs_pred_torque),18) - torque_data(:,6)).^2)));
+loss_joint6 = mean(sqrt(mean((joint_data(1:length(fs_pred_torque),19) - torque_data(:,7)).^2)));
 
 figure()
-tcl = tiledlayout(2,3);
+tcl = tiledlayout(2,3,'TileSpacing','Compact','Padding','Compact');
 
-title(tcl, sprintf('TRANSFORMER-Si %s: RSME = %.4f', test_folder, loss(1)))
+title(tcl, sprintf('LSTM %s: RSME = %.4f', test_folder, loss(1)))
 
 
 nexttile

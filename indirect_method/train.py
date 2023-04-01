@@ -13,8 +13,10 @@ from os.path import join
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 data = sys.argv[1]
-train_path = join('..', '..', 'data_2_23', 'csv_si', 'train', data)
-val_path = join('..', '..', 'data_2_23', 'csv_si', 'val', data)
+# train_path = join('..', '..', 'dvrk-3-16', 'csv', 'train', data)
+# val_path = join('..', '..', 'dvrk-3-16', 'csv', 'val', data)
+train_path = join('..', '..', 'dvrk-si-3-15', 'csv_si', 'train', data)
+val_path = join('..', '..', 'dvrk-si-3-15', 'csv_si', 'val', data)
 root = Path('../..')
 is_rnn = bool(int(sys.argv[2]))
 if is_rnn:
@@ -24,7 +26,7 @@ else:
 range_torque = torch.tensor(max_torque).to(device)
 
 lr = 3e-3  # TODO
-batch_size = 32764
+batch_size = 32764*4
 epochs = 1000
 validate_each = 5
 use_previous_model = False
@@ -46,18 +48,22 @@ ATTN_nhead = 1
 for j in range(JOINTS):
     if is_rnn:
         window = 1000
-        # networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
-        networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
+        networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
+        # networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
     else:
-        window = WINDOW
-        networks.append(fsNetwork(window))
+        # window = WINDOW
+        # networks.append(fsNetwork(window))
+        window = 1000
+        networks.append(torqueLstmNetwork(batch_size, device, attn_nhead=ATTN_nhead))
 
     networks[j].to(device)
     optimizers.append(torch.optim.Adam(networks[j].parameters(), lr))
     schedulers.append(ReduceLROnPlateau(optimizers[j], verbose=True))
 
-train_dataset = indirectDataset(train_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)
-val_dataset = indirectDataset(val_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)
+# train_dataset = indirectDataset(train_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)
+# val_dataset = indirectDataset(val_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)
+train_dataset = indirectDataset(train_path, window, SKIP, in_joints, is_rnn=True, filter_signal=f)
+val_dataset = indirectDataset(val_path, window, SKIP, in_joints, is_rnn=True, filter_signal=f)
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
 val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=False)
 
@@ -65,7 +71,8 @@ loss_fn = torch.nn.MSELoss()
 
 for j in range(JOINTS):
     try:
-        model_root.append(root / "filtered_torque_si" / (folder + str(j)))
+        # model_root.append(root / "filtered_torque_3_16" / (folder + str(j)))
+        model_root.append(root / "filtered_torque_si_3_15" / (folder + str(j)))
         model_root[j].mkdir(mode=0o777, parents=False)
     except OSError:
         print("Model path exists")
@@ -100,7 +107,8 @@ for e in range(epoch, epochs + 1):
         if is_rnn:
             posvel = torch.cat((position, velocity), axis=2).contiguous()
         else:
-            posvel = torch.cat((position, velocity), axis=1).contiguous()
+            # posvel = torch.cat((position, velocity), axis=1).contiguous()
+            posvel = torch.cat((position, velocity), axis=2).contiguous()
             # posvel = position
 
         step_loss = 0
@@ -113,7 +121,8 @@ for e in range(epoch, epochs + 1):
             if is_rnn:
                 loss = loss_fn(pred.squeeze(), torque[:, :, j])
             else:
-                loss = loss_fn(pred.squeeze(), torque[:, j])
+                # loss = loss_fn(pred.squeeze(), torque[:, j])
+                loss = loss_fn(pred.squeeze(), torque[:, :, j])
                 # TODO add a weights to loss of specific joint
                 # if j == 2:
                 #     number_of_2+=1
@@ -147,7 +156,8 @@ for e in range(epoch, epochs + 1):
                 posvel = torch.cat((position, velocity), axis=2).contiguous()
                 # print("#########posvel shape#########:", posvel.shape)
             else:
-                posvel = torch.cat((position, velocity), axis=1).contiguous()
+                # posvel = torch.cat((position, velocity), axis=1).contiguous()
+                posvel = torch.cat((position, velocity), axis=2).contiguous()
                 # posvel = position
                 # print("#########posvel shape#########:", posvel.shape) # 128,360
 
@@ -159,7 +169,8 @@ for e in range(epoch, epochs + 1):
                 if is_rnn:
                     loss = loss_fn(pred.squeeze(), torque[:, :, j])
                 else:
-                    loss = loss_fn(pred.squeeze(), torque[:, j])
+                    # loss = loss_fn(pred.squeeze(), torque[:, j])
+                    loss = loss_fn(pred.squeeze(), torque[:, :, j])
                     # if j == 2:
                     #     number_of_2 += 1
                     #     # loss = loss*100
