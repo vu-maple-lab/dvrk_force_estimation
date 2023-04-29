@@ -21,7 +21,7 @@ folder = network_architecture + '/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
 lr = 1e-2  # TODO
-batch_size = 16
+batch_size = 64
 epochs = 2000
 validate_each = 5
 use_previous_model = False
@@ -107,6 +107,7 @@ for e in range(epoch, epochs + 1):
             # posvel = position
 
         step_loss = 0
+        joint_loss = [None]*6
         # print("######## i is #########:", i)
         for j in range(JOINTS):
             hidden = None
@@ -126,15 +127,16 @@ for e in range(epoch, epochs + 1):
                 #     loss = loss*0
 
             step_loss += loss.item()
+            joint_loss[j] = loss.item()
             optimizers[j].zero_grad()
             loss.backward()
             optimizers[j].step()
 
         tq.update(batch_size)
-        tq.set_postfix(loss=' loss={:.5f}'.format(step_loss))
+        tq.set_postfix(loss=' loss={:.5f}'.format(joint_loss[2]))
         epoch_loss += step_loss
     # print("##### the number of 2 is #######:", number_of_2)
-    tq.set_postfix(loss=' loss={:.5f}'.format(epoch_loss / len(train_loader)))
+    # tq.set_postfix(loss=' loss={:.5f}'.format(epoch_loss / len(train_loader)))
 
     if e % validate_each == 0:
         for j in range(JOINTS):
