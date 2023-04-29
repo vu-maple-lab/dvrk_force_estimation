@@ -7,7 +7,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-max_torque = [20.0000, 20.0000, 20.0000, 0.6000, 0.6000, 0.6000]
+max_torque = [20.0000, 20.0000, 20.0000, 0.2000, 0.6000, 0.6000]
 
 JOINTS = 6
 WINDOW = 30

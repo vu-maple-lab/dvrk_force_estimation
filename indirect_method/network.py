@@ -6,6 +6,7 @@ import math
 import copy
 from torch.nn import functional as F
 
+
 # Network maps joint position and velocity to torque
 class fsNetwork(nn.Module):
     def __init__(self, window, in_joints=6, out_joints=1):
@@ -36,7 +37,7 @@ class fsNetwork(nn.Module):
 
 # Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
 class torqueLstmNetwork(nn.Module):
-    def __init__(self, batch_size, device, attn_nhead, joints=6, hidden_dim=256, num_layers=1):
+    def __init__(self, batch_size, device, joints=6, hidden_dim=256, num_layers=1, is_train=False):
         super(torqueLstmNetwork, self).__init__()
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim
@@ -44,16 +45,16 @@ class torqueLstmNetwork(nn.Module):
         self.device = device
         self.lstm = nn.LSTM(joints * 2, hidden_dim, num_layers, batch_first=True)
         self.linear0 = nn.Linear(hidden_dim, int(hidden_dim / 2))
-        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead)
         self.linear1 = nn.Linear(int(hidden_dim / 2), 1)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
         self.hidden = self.init_hidden(self.batch_size, self.device)
+        self.is_train = is_train
 
     def forward(self, x):
-        # self.hidden = self.init_hidden(x.size()[0], self.device)
+        if self.is_train:
+            self.hidden = self.init_hidden(x.size()[0], self.device)
         x, self.hidden = self.lstm(x, self.hidden)
-        #        self.hidden = tuple(state.detach() for state in self.hidden)
 
         x = self.linear0(x)
         x = self.relu(x)
@@ -67,23 +68,160 @@ class torqueLstmNetwork(nn.Module):
 
 
 # Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
-class torqueTransNetwork(nn.Module):
-    def __init__(self, device, attn_nhead, joints=6, hidden_dim=64):
-        super(torqueTransNetwork, self).__init__()
-        self.hidden_dim = hidden_dim
-        self.device = device
-        self.linear0 = nn.Linear(joints*2, hidden_dim)
-        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True)
-        self.linear1 = nn.Linear(hidden_dim, 1)
+# class tb(nn.Module):
+#     def __init__(self, device, attn_nhead, joints=6, hidden_dim=24, dropout=0.05):
+#         super(tb, self).__init__()
+#         self.hidden_dim = hidden_dim
+#         self.device = device
+#         self.lineark = nn.Linear(joints * 2, hidden_dim)
+#         self.linearq = nn.Linear(joints * 2, hidden_dim)
+#         self.linearv = nn.Linear(joints * 2, hidden_dim)
+#         self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True, dropout=dropout)
+#         self.linear1 = nn.Linear(joints * 2, hidden_dim)
+#         self.linear2 = nn.Linear(hidden_dim, 1)
+#         self.relu = nn.ReLU()
+#         self.tanh = nn.Tanhshrink()
+#
+#         self.layer_norm1 = nn.LayerNorm(hidden_dim)
+#         self.dropout1 = nn.Dropout(dropout)
+#
+#         self.feed_forward = nn.Sequential(
+#             nn.Linear(hidden_dim, hidden_dim),
+#             nn.GELU(),
+#             nn.Linear(hidden_dim, hidden_dim),
+#         )
+#         self.layer_norm2 = nn.LayerNorm(hidden_dim)
+#         self.dropout2 = nn.Dropout(dropout)
+#
+#     def forward(self, x):
+#         k = self.lineark(x)
+#         q = self.linearq(x)
+#         v = self.linearv(x)
+#
+#         k = self.relu(k)
+#         q = self.relu(q)
+#         v = self.relu(v)
+#         attn_output, _ = self.attn(query=q, key=k, value=v)
+#
+#         x = self.linear1(x)
+#
+#         x = x + self.dropout1(attn_output)
+#         x = self.layer_norm1(x)
+#
+#         # Feed-forward network
+#         ff_output = self.feed_forward(x)
+#         x = x + self.dropout2(ff_output)
+#         x = self.layer_norm2(x)
+#
+#
+#         return x
+#
+#
+# class torqueTransNetwork(nn.Module):
+#     def __init__(self, device, attn_nhead, joints=6, hidden_dim=24, num_layers=2, dropout=0.05):
+#         super(torqueTransNetwork, self).__init__()
+#         # super().__init__()
+#
+#         self.dropout = nn.Dropout(dropout)
+#         self.device = device
+#
+#         self.transformer_blocks = nn.ModuleList([
+#             tb(attn_nhead, joints, hidden_dim)
+#             for _ in range(num_layers)
+#         ])
+#
+#         self.fc = nn.Linear(hidden_dim, hidden_dim)
+#
+#         self.linear2 = nn.Linear(hidden_dim, 1)
+#         self.tanh = nn.Tanhshrink()
+#
+#     def forward(self, x):
+#
+#         for transformer in self.transformer_blocks:
+#             x = transformer(x)
+#
+#         x = x.mean(dim=0)
+#         x = self.fc(x)
+#         x = F.relu(x)
+#         x = self.dropout(x)
+#
+#         x = self.linear2(x)
+#         x = self.tanh(x)
+#
+#         return x
+
+class TransformerBlock(nn.Module):
+    def __init__(self, embedding_dim, num_heads, dropout=0.00):
+        super().__init__()
+
+        self.lineark = nn.Linear(embedding_dim, embedding_dim)
+        self.linearq = nn.Linear(embedding_dim, embedding_dim)
+        self.linearv = nn.Linear(embedding_dim, embedding_dim)
+
         self.relu = nn.ReLU()
-        self.tanh = nn.Tanh()
+
+        self.self_attn = nn.MultiheadAttention(embedding_dim, num_heads, dropout=dropout)
+        self.layer_norm1 = nn.LayerNorm(embedding_dim)
+        self.dropout1 = nn.Dropout(dropout)
+
+        self.feed_forward = nn.Sequential(
+            nn.Linear(embedding_dim,  embedding_dim),
+            nn.GELU(),
+            nn.Linear(embedding_dim, embedding_dim),
+        )
+        self.layer_norm2 = nn.LayerNorm(embedding_dim)
+        self.dropout2 = nn.Dropout(dropout)
 
     def forward(self, x):
-        x = self.linear0(x)
-        x = self.relu(x)
-        x, _ = self.attn(query=x, key=x, value=x)
-        x = self.linear1(x)
+        k = self.lineark(x)
+        q = self.linearq(x)
+        v = self.linearv(x)
+
+        k = self.relu(k)
+        q = self.relu(q)
+        v = self.relu(v)
+
+
+        # Multi-head self-attention
+        attn_output, _ = self.self_attn(query=q, key=k, value=v)
+        x = x + self.dropout1(attn_output)
+        x = self.layer_norm1(x)
+
+        # Feed-forward network
+        ff_output = self.feed_forward(x)
+        x = x + self.dropout2(ff_output)
+        x = self.layer_norm2(x)
+
+        return x
+
+class torqueTransNetwork(nn.Module):
+    def __init__(self, device, attn_nhead, joints=6, embedding_dim=32, hidden_dim=12, num_layers=4, dropout=0.00):
+        super().__init__()
+
+        self.device = device
+        self.embedding = nn.Linear(joints * 2, embedding_dim)
+        self.dropout = nn.Dropout(dropout)
+
+        self.transformer_blocks = nn.ModuleList([
+            TransformerBlock(embedding_dim, attn_nhead, dropout)
+            for _ in range(num_layers)
+        ])
+
+        self.fc = nn.Linear(embedding_dim, 1)
+        self.out = nn.Linear(hidden_dim, 1)
+
+        self.tanh = nn.Tanhshrink()
+
+    def forward(self, x):
+        x = self.embedding(x)
+
+        for transformer in self.transformer_blocks:
+            x = transformer(x)
+
+        x = self.fc(x)
+
         x = self.tanh(x)
+
         return x
 
 

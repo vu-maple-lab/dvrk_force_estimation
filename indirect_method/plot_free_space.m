@@ -1,8 +1,8 @@
 data = 'free_space';
 contact = 'no_contact';
-test_folder = 'val';
+test_folder = 'test';
 rnn = 'lstm';
-network = '_seal_pred_filtered_torque_3_16.csv';
+network = '_seal_pred_filtered_torque_si_3_15.csv';
 
 %loss = 0;
 loss = [0,0,0,0];
@@ -14,11 +14,11 @@ exp = ['exp',num2str(file)];
 if strcmp(test_folder, 'test')
 %     joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
 %     torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
-      joint_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/joints/'];
-      torque_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/', 'lstm', network];
+      joint_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/joints/'];
+      torque_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/', 'lstm', network];
 else
-    joint_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../../dvrk-3-16/csv/', test_folder, '/', data, '/', 'lstm', network];
+    joint_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/joints/'];
+    torque_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/', 'lstm', network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
