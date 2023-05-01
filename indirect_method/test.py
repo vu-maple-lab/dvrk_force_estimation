@@ -71,7 +71,7 @@ def main():
         if net == 'lstm':
             networks.append(torqueLstmNetwork(batch_size, device).to(device))
         elif net == 'attn':
-            networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead).to(device))
+            networks.append(torqueTransNetwork(batch_size, device, attn_nhead=ATTN_nhead).to(device))
         else:
             networks.append(fsNetwork(window).to(device))
 

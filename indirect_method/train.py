@@ -49,7 +49,7 @@ for j in range(JOINTS):
         is_rnn = True
     elif network_architecture == 'attn':
         window = 1000
-        networks.append(torqueTransNetwork(device, attn_nhead=ATTN_nhead))
+        networks.append(torqueTransNetwork(batch_size, device, attn_nhead=ATTN_nhead, is_train=True))
         is_rnn = True
     else:
         window = WINDOW
