@@ -37,7 +37,7 @@ loss_joint6 = mean(sqrt(mean((joint_data(1:length(fs_pred_torque),19) - torque_d
 figure()
 tcl = tiledlayout(2,3,'TileSpacing','Compact','Padding','Compact');
 
-title(tcl, sprintf('LSTM %s: RSME = %.4f', test_folder, loss(1)))
+title(tcl, sprintf('LSTM %s: RMSE = %.4f', test_folder, loss(1)))
 
 
 nexttile

@@ -77,14 +77,14 @@ class torqueTransNetwork(nn.Module):
         self.linearq = nn.Linear(joints * 2, int(hidden_dim/2))
         self.linearv = nn.Linear(joints * 2, int(hidden_dim/2))
         self.attn = nn.MultiheadAttention(embed_dim=int(hidden_dim/2), num_heads=attn_nhead, batch_first=True, dropout=dropout)
-        self.linear1 = nn.Linear(joints * 2, hidden_dim)
+        self.linear1 = nn.Linear(joints * 2, int(hidden_dim/2))
         self.linear2 = nn.Linear(hidden_dim, joints * 2)
         self.linear3 = nn.Linear(hidden_dim, int(hidden_dim/2))
         self.linear4 = nn.Linear(int(hidden_dim/2), 1)
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
-        self.layer_norm1 = nn.LayerNorm(hidden_dim)
+        self.layer_norm1 = nn.LayerNorm(int(hidden_dim/2))
         self.dropout1 = nn.Dropout(dropout)
 
         self.feed_forward = nn.Sequential(
@@ -98,8 +98,6 @@ class torqueTransNetwork(nn.Module):
         self.num_layers = num_layers
         self.batch_size = batch_size
         self.lstm = nn.LSTM(int(hidden_dim/2), hidden_dim, num_layers, batch_first=True)
-        self.linear0 = nn.Linear(hidden_dim, int(hidden_dim / 2))
-        self.linear1 = nn.Linear(int(hidden_dim / 2), 1)
         self.hidden = self.init_hidden(self.batch_size, self.device)
         self.is_train = is_train
 
@@ -112,6 +110,12 @@ class torqueTransNetwork(nn.Module):
         q = self.relu(q)
         v = self.relu(v)
         attn_output, _ = self.attn(query=q, key=k, value=v)
+
+        # x = self.linear1(x)
+        # x = self.relu(x)
+        #
+        # x = x + self.dropout1(attn_output)
+        # x = self.layer_norm1(x)
 
         if self.is_train:
             self.hidden = self.init_hidden(attn_output.size()[0], self.device)
