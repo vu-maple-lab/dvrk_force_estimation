@@ -1,4 +1,5 @@
 import sys
+import time as tm
 import tqdm
 import torch
 from pathlib import Path
@@ -13,16 +14,16 @@ from os.path import join
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 data = sys.argv[1]
-train_path = join('..', '..', 'dvrk-si-3-15', 'csv_si', 'train', data)
-val_path = join('..', '..', 'dvrk-si-3-15', 'csv_si', 'val', data)
+train_path = join('..', '..', 'dvrk_si_col_9_1', 'train', data)
+val_path = join('..', '..', 'dvrk_si_col_9_1', 'val', data)
 root = Path('../..')
 network_architecture = sys.argv[2]
 folder = network_architecture + '/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
-lr = 1e-2  # TODO
-batch_size = 64
-epochs = 2000
+lr = 1e-3  # TODO
+batch_size = 64 #2048*64
+epochs = 5
 validate_each = 5
 use_previous_model = False
 epoch_to_use = 40  # TODO
@@ -66,9 +67,11 @@ val_loader = DataLoader(dataset=val_dataset, batch_size=batch_size, shuffle=Fals
 
 loss_fn = torch.nn.MSELoss()
 
+start_time = tm.time()
+
 for j in range(JOINTS):
     try:
-        model_root.append(root / "filtered_torque_si_3_15" / (folder + str(j)))
+        model_root.append(root / "filtered_torque_si_9_1" / (folder + str(j)))
         model_root[j].mkdir(mode=0o777, parents=False)
     except OSError:
         print("Model path exists")
@@ -190,3 +193,16 @@ for e in range(epoch, epochs + 1):
                 best_loss[j] = val_loss[j]
 
     tq.close()
+
+end_time = tm.time()
+
+training_time = end_time - start_time
+
+print(f"Training time: {training_time:.2f} seconds")
+
+count = 0
+for i in range(JOINTS):
+    total_params = sum(p.numel() for p in networks[j].parameters())
+    count += total_params
+    if i == 5:
+        print("Total Parameters:", count)

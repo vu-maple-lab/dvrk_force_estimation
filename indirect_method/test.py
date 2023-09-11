@@ -17,7 +17,7 @@ epoch_to_use = 0  # int(sys.argv[1])
 exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
-preprocess = 'filtered_torque_si_3_15'  # sys.argv[4]
+preprocess = 'filtered_torque_si_9_1'  # sys.argv[4]
 folder = net + '/' + data
 is_rnn = net != 'ff'
 if is_rnn:
@@ -38,12 +38,12 @@ ATTN_nhead=1
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../../dvrk-si-3-15/csv_si/train/' + data + '/'
+        path = '../../dvrk_si_col_9_1/train/' + data + '/'
     elif exp == 'val':
-        path = '../../dvrk-si-3-15/csv_si/val/' + data + '/'
+        path = '../../dvrk_si_col_9_1/val/' + data + '/'
     elif exp == 'test':
         # path = '../../csv_si/test/' + data + '/no_contact/'
-        path = '../../dvrk-si-3-15/csv_si/test/' + data + '/'
+        path = '../../dvrk_si_col_9_1/test/' + data + '/'
     else:
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'

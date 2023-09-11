@@ -69,7 +69,7 @@ class torqueLstmNetwork(nn.Module):
 
 # Vaguely inspired by LSTM from https://github.com/BerkeleyAutomation/dvrkCalibration/blob/cec2b8096e3a891c4dcdb09b3161e2a407fee0ee/experiment/3_training/modeling/models.py
 class torqueTransNetwork(nn.Module):
-    def __init__(self, batch_size, device, attn_nhead, joints=6, hidden_dim=128, num_layers=1, dropout=0.00, is_train=False):
+    def __init__(self, batch_size, device, attn_nhead, joints=6, hidden_dim=32, num_layers=1, dropout=0.00, is_train=False):
         super(torqueTransNetwork, self).__init__()
         self.hidden_dim = hidden_dim
         self.device = device
@@ -81,6 +81,8 @@ class torqueTransNetwork(nn.Module):
         self.linear2 = nn.Linear(hidden_dim, joints * 2)
         self.linear3 = nn.Linear(hidden_dim, int(hidden_dim/2))
         self.linear4 = nn.Linear(int(hidden_dim/2), 1)
+
+        self.linear5 = nn.Linear(int(hidden_dim/2), int(hidden_dim/4))
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
@@ -121,11 +123,11 @@ class torqueTransNetwork(nn.Module):
             self.hidden = self.init_hidden(attn_output.size()[0], self.device)
         x, self.hidden = self.lstm(attn_output, self.hidden)
 
-        # x = self.linear1(x)
-        # x = self.relu(x)
-        #
-        # x = x + self.dropout1(attn_output)
-        # x = self.layer_norm1(x)
+        x = self.linear1(x)
+        x = self.relu(x)
+
+        x = x + self.dropout1(attn_output)
+        x = self.layer_norm1(x)
 
         # x = self.relu(x)
         #
@@ -135,8 +137,11 @@ class torqueTransNetwork(nn.Module):
         # x = self.layer_norm2(x)
         # x = self.relu(x)
 
-        x = self.linear3(x)
-        x = self.relu(x)
+        # x = self.linear3(x)
+        # x = self.relu(x)
+
+        # x = self.linear5(attn_output)
+        # x = self.relu(x)
 
         x = self.linear4(x)
         x = self.tanh(x)
