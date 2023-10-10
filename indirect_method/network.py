@@ -73,20 +73,25 @@ class torqueTransNetwork(nn.Module):
         super(torqueTransNetwork, self).__init__()
         self.hidden_dim = hidden_dim
         self.device = device
-        self.lineark = nn.Linear(joints * 2, int(hidden_dim/2))
-        self.linearq = nn.Linear(joints * 2, int(hidden_dim/2))
-        self.linearv = nn.Linear(joints * 2, int(hidden_dim/2))
-        self.attn = nn.MultiheadAttention(embed_dim=int(hidden_dim/2), num_heads=attn_nhead, batch_first=True, dropout=dropout)
-        self.linear1 = nn.Linear(joints * 2, int(hidden_dim/2))
+        self.lineark = nn.Linear(joints * 2, hidden_dim)
+        self.linearq = nn.Linear(joints * 2, hidden_dim)
+        self.linearv = nn.Linear(joints * 2, hidden_dim)
+        self.attn = nn.MultiheadAttention(embed_dim=hidden_dim, num_heads=attn_nhead, batch_first=True, dropout=dropout)
+        self.linear1 = nn.Linear(joints * 2, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, joints * 2)
         self.linear3 = nn.Linear(hidden_dim, int(hidden_dim/2))
         self.linear4 = nn.Linear(int(hidden_dim/2), 1)
 
-        self.linear5 = nn.Linear(int(hidden_dim/2), int(hidden_dim/4))
+        self.lineark1 = nn.Linear(hidden_dim, hidden_dim)
+        self.linearq1 = nn.Linear(hidden_dim, hidden_dim)
+        self.linearv1 = nn.Linear(hidden_dim, hidden_dim)
+
+        self.linear5 = nn.Linear(hidden_dim, int(hidden_dim/2))
+
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
-        self.layer_norm1 = nn.LayerNorm(int(hidden_dim/2))
+        self.layer_norm1 = nn.LayerNorm(hidden_dim)
         self.dropout1 = nn.Dropout(dropout)
 
         self.feed_forward = nn.Sequential(
@@ -119,15 +124,15 @@ class torqueTransNetwork(nn.Module):
         # x = x + self.dropout1(attn_output)
         # x = self.layer_norm1(x)
 
-        if self.is_train:
-            self.hidden = self.init_hidden(attn_output.size()[0], self.device)
-        x, self.hidden = self.lstm(attn_output, self.hidden)
+        # if self.is_train:
+        #     self.hidden = self.init_hidden(attn_output.size()[0], self.device)
+        # x, self.hidden = self.lstm(attn_output, self.hidden)
 
-        x = self.linear1(x)
-        x = self.relu(x)
+        # x = self.linear1(x)
+        # x = self.relu(x)
 
-        x = x + self.dropout1(attn_output)
-        x = self.layer_norm1(x)
+        # x = x + self.dropout1(attn_output)
+        # x = self.layer_norm1(x)
 
         # x = self.relu(x)
         #
@@ -140,8 +145,8 @@ class torqueTransNetwork(nn.Module):
         # x = self.linear3(x)
         # x = self.relu(x)
 
-        # x = self.linear5(attn_output)
-        # x = self.relu(x)
+        x = self.linear5(attn_output)
+        x = self.relu(x)
 
         x = self.linear4(x)
         x = self.tanh(x)

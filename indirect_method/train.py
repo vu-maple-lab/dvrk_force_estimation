@@ -11,19 +11,26 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from utils import init_weights, WINDOW, JOINTS, SKIP, max_torque, save, load_prev
 from os.path import join
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 data = sys.argv[1]
-train_path = join('..', '..', 'dvrk_si_col_9_1', 'train', data)
-val_path = join('..', '..', 'dvrk_si_col_9_1', 'val', data)
+
+arm = sys.argv[3]
+
+train_path = join('..', '..', 'dvrk_colon_9_26', 'bilateral_free_space_sep_27', 'train', arm, data)
+val_path = join('..', '..', 'dvrk_colon_9_26', 'bilateral_free_space_sep_27', 'val', arm, data)
 root = Path('../..')
 network_architecture = sys.argv[2]
-folder = network_architecture + '/' + data
+folder = network_architecture + '/' + arm + '/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
 lr = 1e-3  # TODO
-batch_size = 64 #2048*64
-epochs = 5
+batch_size = 131072
+epochs = 700
 validate_each = 5
 use_previous_model = False
 epoch_to_use = 40  # TODO
@@ -71,7 +78,7 @@ start_time = tm.time()
 
 for j in range(JOINTS):
     try:
-        model_root.append(root / "filtered_torque_si_9_1" / (folder + str(j)))
+        model_root.append(root / "filtered_torque_colon_9_26" / (folder + str(j)))
         model_root[j].mkdir(mode=0o777, parents=False)
     except OSError:
         print("Model path exists")
@@ -86,6 +93,8 @@ else:
 
 print('Training for ' + str(epochs))
 best_loss = torch.zeros(6) + 1e8
+
+all_losses = [[] for _ in range(JOINTS)]  # Create a list to store losses for each model
 
 for e in range(epoch, epochs + 1):
 
@@ -117,6 +126,9 @@ for e in range(epoch, epochs + 1):
             # pred, _ = networks[j](posvel, hidden) * range_torque[j]
             pred = networks[j](posvel) * range_torque[j]
             # print("#########pred shape#########:", pred.shape) # [128, 1] this 128 is not batchsize, that's the torque size
+
+            losses = all_losses[j]
+
             if is_rnn:
                 loss = loss_fn(pred.squeeze(), torque[:, :, j])
             else:
@@ -131,6 +143,9 @@ for e in range(epoch, epochs + 1):
 
             step_loss += loss.item()
             joint_loss[j] = loss.item()
+
+            losses.append(loss.item())
+
             optimizers[j].zero_grad()
             loss.backward()
             optimizers[j].step()
@@ -202,7 +217,22 @@ print(f"Training time: {training_time:.2f} seconds")
 
 count = 0
 for i in range(JOINTS):
-    total_params = sum(p.numel() for p in networks[j].parameters())
+    total_params = sum(p.numel() for p in networks[i].parameters())
     count += total_params
     if i == 5:
         print("Total Parameters:", count)
+
+# After training, create a 2x3 grid of subplots for the losses
+fig, axs = plt.subplots(2, 3, figsize=(12, 8))  # 2 rows and 3 columns
+
+for j, losses in enumerate(all_losses):
+    row = j // 3  # Determine the row index
+    col = j % 3  # Determine the column index
+
+    axs[row, col].plot(np.arange(1, len(losses) + 1), losses)
+    axs[row, col].set_title(f'Model {j + 1} Loss')
+    axs[row, col].set_xlabel('Epochs')
+    axs[row, col].set_ylabel('Loss')
+
+plt.tight_layout()  # Adjusts spacing between subplots
+plt.show()

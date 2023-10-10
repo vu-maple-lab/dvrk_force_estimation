@@ -2,7 +2,9 @@ data = 'free_space';
 contact = 'no_contact';
 test_folder = 'test';
 rnn = 'lstm';
-network = '_seal_pred_filtered_torque_si_9_1.csv';
+network = '_seal_pred_filtered_torque_colon_9_26.csv';
+
+arm = 'psm1_mary_1';
 
 %loss = 0;
 loss = [0,0,0,0];
@@ -14,11 +16,11 @@ exp = ['exp',num2str(file)];
 if strcmp(test_folder, 'test')
 %     joint_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/joints/'];
 %     torque_path = ['../../data_2_23/csv_si/', test_folder, '/', data, '/', contact, '/', exp, '/', rnn, network];
-      joint_path = ['../../dvrk_si_col_9_1/', test_folder, '/', data, '/joints/'];
-      torque_path = ['../../dvrk_si_col_9_1/', test_folder, '/', data, '/', 'lstm', network];
+      joint_path = ['../../dvrk_colon_9_26/bilateral_free_space_sep_27/', test_folder, '/', arm, '/', data, '/joints/'];
+      torque_path = ['../../dvrk_colon_9_26/bilateral_free_space_sep_27/', test_folder, '/', arm, '/', data, '/', 'lstm', network];
 else
-    joint_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/joints/'];
-    torque_path = ['../../dvrk-si-3-15/csv_si/', test_folder, '/', data, '/', 'lstm', network];
+    joint_path = ['../../dvrk_colon_9_26/bilateral_free_space_sep_27/', test_folder, '/', arm, '/', data, '/joints/'];
+    torque_path = ['../../dvrk_colon_9_26/bilateral_free_space_sep_27/', test_folder, '/', arm, '/', data, '/', 'lstm', network];
 end
 
 joint_data = readmatrix([joint_path, 'interpolated_all_joints.csv']);
@@ -37,11 +39,11 @@ loss_joint6 = mean(sqrt(mean((joint_data(1:length(fs_pred_torque),19) - torque_d
 figure()
 tcl = tiledlayout(2,3,'TileSpacing','Compact','Padding','Compact');
 
-title(tcl, sprintf('LSTM %s: RMSE = %.4f', test_folder, loss(1)))
+title(tcl, sprintf('ATTN %s: RMSE = %.4f', test_folder, loss(1)))
 
 
 nexttile
-plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,14), 'b')
+plot(joint_data(:, 1), joint_data(:,14), 'b')
 hold on
 title('joint 1')
 plot(torque_data(:, 1), torque_data(:,2), 'r')
@@ -49,14 +51,14 @@ legend('measured', 'predicted')
 hold off
 
 nexttile
-plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,15), 'b')
+plot(joint_data(:, 1), joint_data(:,15), 'b')
 hold on
 title('joint 2')
 plot(torque_data(:, 1), torque_data(:,3), 'r')
 legend('measured', 'predicted')
 
 nexttile
-plot(joint_data(:, 1)-joint_data(1,1), joint_data(:,16), 'b')
+plot(joint_data(:, 1), joint_data(:,16), 'b')
 hold on
 title('joint 3')
 plot(torque_data(:, 1), torque_data(:,4), 'r')

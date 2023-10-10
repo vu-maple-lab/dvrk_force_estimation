@@ -17,8 +17,11 @@ epoch_to_use = 0  # int(sys.argv[1])
 exp = sys.argv[1]  # sys.argv[2]
 net = sys.argv[2]
 seal = sys.argv[3]
-preprocess = 'filtered_torque_si_9_1'  # sys.argv[4]
-folder = net + '/' + data
+
+arm = sys.argv[4]
+
+preprocess = 'filtered_torque_colon_9_26'  # sys.argv[4]
+folder = net + '/' + arm + '/' + data
 is_rnn = net != 'ff'
 if is_rnn:
     batch_size = 1
@@ -38,12 +41,13 @@ ATTN_nhead=1
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../../dvrk_si_col_9_1/train/' + data + '/'
+        path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/train/' + arm + '/' + data + '/'
     elif exp == 'val':
-        path = '../../dvrk_si_col_9_1/val/' + data + '/'
+        path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/val/' + arm + '/' + data + '/'
     elif exp == 'test':
         # path = '../../csv_si/test/' + data + '/no_contact/'
-        path = '../../dvrk_si_col_9_1/test/' + data + '/'
+        # path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/test/' + arm + '/' + data + '/'
+        path = '../../dvrk_colon_9_26/colon_exp_sep_26/trial_4/' + arm + '/' + data + '/'
     else:
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
@@ -64,7 +68,7 @@ def main():
     for j in range(JOINTS):
         folder = fs + str(j)
         print("###### the name of loaded model is: #########", root / preprocess / net / folder)
-        model_root.append(root / preprocess / net / folder)
+        model_root.append(root / preprocess / net / arm / folder)
 
     networks = []
     for j in range(JOINTS):
