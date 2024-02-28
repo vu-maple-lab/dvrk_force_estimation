@@ -44,7 +44,7 @@ class RosbagParser():
 
 
         print("Processing " + file_name)
-        joint_msg = bag.read_messages(topics=['/dvrk/PSM2/state_joint_current'])
+        joint_msg = bag.read_messages(topics=['/PSM1/measured_js'])
         for topic, msg, t in joint_msg:
             joint_timestamps.append(t.secs+t.nsecs*10**-9)
 
@@ -57,17 +57,17 @@ class RosbagParser():
             # handles effort for six joints
             joint_effort.append(list(msg.effort))
 
-        jacobian_spatial = bag.read_messages(topics=['/dvrk/PSM2/jacobian_spatial'])
+        jacobian_spatial = bag.read_messages(topics=['/PSM1/spatial/jacobian'])
         for topic, msg, t in jacobian_spatial:
             jacobian_timestamps.append(t.secs+t.nsecs*10**-9)
             jacobian.append(list(msg.data))
 
-        jaw_msg = bag.read_messages(topics=['/dvrk/PSM2/state_jaw_current'])
+        jaw_msg = bag.read_messages(topics=['/PSM1/jaw/measured_js'])
         for topic, msg, t in jaw_msg:
             jaw_timestamps.append(t.secs+t.nsecs*10**-9)
             jaw.append([msg.position, msg.velocity, msg.effort])
             
-        wrench = bag.read_messages(topics=['/atinetft/wrench'])
+        wrench = bag.read_messages(topics=['/measured_cf'])
         for topic, msg, t in wrench:
             force_sensor_timestamps.append(t.secs+t.nsecs*10**-9)
             x = msg.wrench.force.x
@@ -78,15 +78,15 @@ class RosbagParser():
             t_z = msg.wrench.torque.z
             force_sensor.append([x,y,z,t_x,t_y,t_z])
 
-        fsr0_msg = bag.read_messages(topics=['/FSR0'])
-        for topic, msg, t in fsr0_msg:
-            fsr0_timestamps.append(t.secs+t.nsecs*10**-9)
-            fsr0.append([msg.data])
+        # fsr0_msg = bag.read_messages(topics=['/FSR0'])
+        # for topic, msg, t in fsr0_msg:
+        #     fsr0_timestamps.append(t.secs+t.nsecs*10**-9)
+        #     fsr0.append([msg.data])
 
-        fsr1_msg = bag.read_messages(topics=['/FSR1'])
-        for topic, msg, t in fsr1_msg:
-            fsr1_timestamps.append(t.secs+t.nsecs*10**-9)
-            fsr1.append([msg.data])
+        # fsr1_msg = bag.read_messages(topics=['/FSR1'])
+        # for topic, msg, t in fsr1_msg:
+        #     fsr1_timestamps.append(t.secs+t.nsecs*10**-9)
+        #     fsr1.append([msg.data])
             
         bag.close()
                                       
@@ -94,8 +94,8 @@ class RosbagParser():
         print("Processed state joint current: count: {}".format(len(joint_timestamps)))
         print("Processed state jaw current: count: {}".format(len(jaw_timestamps)))
         print("Processed Jacobian: count: {}".format(len(jacobian)))
-        print("Processed FSR0: count: {}".format(len(fsr0)))
-        print("Processed FSR1: count: {}".format(len(fsr1)))
+        # print("Processed FSR0: count: {}".format(len(fsr0)))
+        # print("Processed FSR1: count: {}".format(len(fsr1)))
         
         try:
             joint_path = Path(self.output) / "joints"
@@ -123,19 +123,19 @@ class RosbagParser():
             except OSError:
                 print("Jaw path exists")
 
-        if len(fsr0) > 0:
-            try:
-                fsr0_path = Path(self.output) / "fsr0"
-                fsr0_path.mkdir(mode=0o777, parents=False)
-            except OSError:
-                print("FSR0 path exists")
+        # if len(fsr0) > 0:
+        #     try:
+        #         fsr0_path = Path(self.output) / "fsr0"
+        #         fsr0_path.mkdir(mode=0o777, parents=False)
+        #     except OSError:
+        #         print("FSR0 path exists")
         
-        if len(fsr1) > 0:
-            try:
-                fsr1_path = Path(self.output) / "fsr1"
-                fsr1_path.mkdir(mode=0o777, parents=False)
-            except OSError:
-                print("FSR1 path exists")
+        # if len(fsr1) > 0:
+        #     try:
+        #         fsr1_path = Path(self.output) / "fsr1"
+        #         fsr1_path.mkdir(mode=0o777, parents=False)
+        #     except OSError:
+        #         print("FSR1 path exists")
         
         
         start_time = joint_timestamps[0]
@@ -192,7 +192,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--folder', default='../data/', type=str, help='Path to Rosbag folder')
     parser.add_argument('-o', '--output', default='./parsed_data/', type=str, help='Path to write out parsed csv')
-    parser.add_argument('--prefix', default='bag_', type=str, help='Prefix for the output csv names')
+    parser.add_argument('--prefix', default='free_train_', type=str, help='Prefix for the output csv names')
     parser.add_argument('--index', default=0, type=int, help='Starting index for the output csv names')
     args = parser.parse_args()
     start = time.time()
@@ -204,4 +204,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+###### example: python3 read_ros_bags_v2_1.py -f ~/force_estimation/dvrk_colon_9_26/bilateral_free_space_sep_27/test/psm1_mary_1/ -o ~/force_estimation/dvrk_colon_9_26/bilateral_free_space_sep_27/test/psm1_mary_1/
+
+###### python3 read_ros_bags_v2_1.py -f ~/force_estimation/dvrk_colon_9_26/colon_exp_sep_26/trial_6/ -o ~/force_estimation/dvrk_colon_9_26/colon_exp_sep_26/trial_6/psm1_mary/
 
