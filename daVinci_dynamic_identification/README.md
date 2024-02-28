@@ -34,7 +34,7 @@ Direct plug into 2nd LSTM (x) MLP network in Jie Ying's code (✓)
 
 ![workflow](https://github.com/JackHaoyingZhou/daVinci_dynamic_identification/assets/33953293/645f6a55-e565-425e-b553-48a459b91f15)
 
-2, Run main_mtm.ipynb in devel branch. Use simplified model and modify test set related args accordingly.
+2, Run psm_ID_run_w_FE.ipynb. Use simplified model and modify test set related args accordingly.
 
 3, Run train_trocar.py and test_trocar.py. I use python train_trocar.py 1 1 and python test_trocar.py net no_seal but args always changeable. Note you need to play with window size.
 
