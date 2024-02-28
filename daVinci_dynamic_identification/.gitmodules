@@ -1,0 +1,3 @@
+[submodule "pyOpt"]
+	path = pyOpt
+	url = https://github.com/JackHaoyingZhou/pyOpt.git
