@@ -7,22 +7,26 @@ TODO list:
 **  - Seems Yan's code is also sketchy... it uses psm for model and psm_simp 
     to generate traj. Let's either use Yan's (messy) or Italian's (runs
     forever), to at least run all the way down to convex opt.
-*   Automate column merge (jaw insert to the others). Maybe also investigate 
-    how the 6 & 7 joints are combined... remember Anton mentioned sth
-*   The ral accomodation is nasty. Prob it's running in a weird condition.
+    --- Decide to use eventually use psm_simp. (✓)
+*   Automate column merge (jaw insert to the others). (✓)
+*   The ral accomodation is nasty. Prob it's running in a weird condition. 
 **  - It does... but looks like I only need to comment in jaw_poses. Prob
-    deal with frequency at some point.
+    deal with frequency at some point. (✓)
 *   For this optimized traj, the tool really messes up. It always turns to
     max and I don't know why...
 **  - Replace tool to a shorter scissor helps. Need to double check on
     plotjuggler, see if it exceeds limit.
+    --- The paper actually refers to a large needle driver. Neh, cna only
+    do our best... (✓)
+*   Maybe also investigate how the 6 & 7 joints are combined... remember
+    Anton mentioned sth
 *   The insertion joint is quite shaky when rises back. No idea.
-**  - From observation this does dig in jerky prediction
+**  - From observation this does bring in jerky prediction
 *   Probably insertion joint calibration?? 
 
-## Next Step after ID Fixed:
+## Trocar Correction:
 
-Direct plug into 2nd LSTM network in Jie Ying's code
+Direct plug into 2nd LSTM (x) MLP network in Jie Ying's code (✓)
 
 ## Standardized workflow:
 
