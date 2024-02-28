@@ -13,7 +13,7 @@ range_torque = (max_torque - min_torque)/2 + 0.1*(max_torque - min_torque)
 max_torque = [3.32, 3.32, 9.88, 0.344, 0.344, 0.344]
 
 JOINTS = 6
-WINDOW = 30
+WINDOW = 10
 SKIP = 1
 
 def nrmse_loss(y_hat, y, j=0, verbose=False):
