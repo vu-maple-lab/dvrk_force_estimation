@@ -1,7 +1,6 @@
 import sympy
 from sympy.physics.vector import dynamicsymbols
-import numpy as np
-from utils import inertia_vec2tensor, ml2r, Lmr2I, new_sym
+from dvrk_dynamic_identification.utils import inertia_vec2tensor, ml2r, Lmr2I, new_sym
 
 
 def new_sym(name):

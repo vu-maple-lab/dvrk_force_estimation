@@ -6,7 +6,7 @@ import scipy.signal
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
-from utils import ml2r, Lmr2I, inertia_vec2tensor, inertia_tensor2vec
+from  dvrk_dynamic_identification.utils import Lmr2I, inertia_vec2tensor, inertia_tensor2vec
 import sympy
 
 # the format of file should be q0, tau0, q1, tau1, ..., qn, taun

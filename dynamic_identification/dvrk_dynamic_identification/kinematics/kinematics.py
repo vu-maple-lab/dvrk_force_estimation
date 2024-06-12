@@ -1,14 +1,6 @@
-import sympy
-import matplotlib.pyplot as plt
 import numpy as np
 from collections import deque
-
-import os
-import sys
-dynamic_path = os.path.abspath(__file__+"/../")
-# print(dynamic_path)
-sys.path.append(dynamic_path)
-from frame_drawer import FrameDrawer
+from dvrk_dynamic_identification.kinematics.frame_drawer import FrameDrawer
 
 
 class Kinematics:

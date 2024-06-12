@@ -1,17 +1,10 @@
 from pyOpt import SLSQP
-from pyOpt import NSGA2
-from pyOpt import pyNLPQL
-from pyOpt import SOLVOPT
+# from pyOpt import NSGA2
+# from pyOpt import pyNLPQL
+# from pyOpt import SOLVOPT
 import pyOpt
 import numpy as np
-
-import os
-import sys
-dynamic_path = os.path.abspath(__file__+"/../")
-# print(dynamic_path)
-sys.path.append(dynamic_path)
-import matplotlib.pyplot as plt
-from fourier_traj import FourierTraj
+from dvrk_dynamic_identification.trajectory_optimization.fourier_traj import FourierTraj
 import csv
 import sympy
 

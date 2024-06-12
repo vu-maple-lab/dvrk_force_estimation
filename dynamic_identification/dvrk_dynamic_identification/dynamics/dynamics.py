@@ -1,18 +1,8 @@
 import sympy
-from sympy import lambdify
-from sympy.utilities.iterables import flatten
 import numpy as np
-from collections import deque
-from utils import vec2so3, new_sym
-from sympy import pprint
-import time
+from dvrk_dynamic_identification.utils import vec2so3
 import copy
-import os
-import sys
-dynamic_path = os.path.abspath(__file__+"/../")
-# print(dynamic_path)
-sys.path.append(dynamic_path)
-from dyn_param_dep import find_dyn_parm_deps
+from dvrk_dynamic_identification.dynamics.dyn_param_dep import find_dyn_parm_deps
 
 class Dynamics:
     def __init__(self, rbt_def, geom, g=[0, 0, -9.81], verbose=False):

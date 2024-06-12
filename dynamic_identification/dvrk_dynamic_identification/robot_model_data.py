@@ -1,8 +1,6 @@
-from dynamics import Dynamics
-from kinematics import Geometry
+from dvrk_dynamic_identification.dynamics.dynamics import Dynamics
+from dvrk_dynamic_identification.kinematics.geometry import Geometry
 import robot_def
-import sympy
-import numpy
 
 class RobotModel:
     def __init__(self, dyn):
