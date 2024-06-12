@@ -134,7 +134,7 @@ def gen_DLki_mat4():
 
 
 def save_data(folder, name, data):
-    model_file = folder + name + '.pkl'
+    model_file = os.path.join(folder, f'{name}.pkl')
 
     if not os.path.exists(os.path.dirname(model_file)):
         try:
@@ -147,13 +147,14 @@ def save_data(folder, name, data):
         cloudpickle.dump(data, f)
 
 def save_csv_data(folder, name, data):
-    with open(folder + name + '.csv', 'wb') as myfile:
+    file_path = os.path.join(folder, f'{name}.csv')
+    with open(file_path, 'wb') as myfile:
         wr = csv.writer(myfile, quoting=csv.QUOTE_NONE)
         for i in range(np.size(data, 0) - 10):
             wr.writerow(data[i])
 
 def load_data(folder, name):
-    model_file = folder + name + '.pkl'
+    model_file = os.path.join(folder, f'{name}.pkl')
     if os.path.exists(model_file):
         with open(model_file, 'rb') as f:
             data = pickle.load(f)

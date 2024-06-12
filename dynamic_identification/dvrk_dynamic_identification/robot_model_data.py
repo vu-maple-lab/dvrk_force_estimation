@@ -1,6 +1,6 @@
 from dvrk_dynamic_identification.dynamics.dynamics import Dynamics
 from dvrk_dynamic_identification.kinematics.geometry import Geometry
-import robot_def
+from dvrk_dynamic_identification.robot_def import RobotDef
 
 class RobotModel:
     def __init__(self, dyn):

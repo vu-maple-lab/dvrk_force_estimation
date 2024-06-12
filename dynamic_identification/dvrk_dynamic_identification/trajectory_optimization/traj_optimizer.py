@@ -229,12 +229,15 @@ class TrajOptimizer:
         # SLSQP
         # slsqp = pySLSQP.SLSQP()
         slsqp = SLSQP()
-        slsqp.setOption('IPRINT', 0)
+        slsqp.setOption('IPRINT', 1) # save in the file
+        # slsqp.setOption('IPOPT', 0) # show in the terminal
+        # slsqp.setOption('IPRINT', -1) # don't show
         # slsqp.setOption('MAXIT', 300)
         #slsqp.setOption('ACC', 0.00001)
 
         # SOLVOPT
         # slsqp = pyOpt.pySOLVOPT.SOLVOPT()
+        # slsqp.setOption('IPRINT', 1)  # save in the file
         # slsqp.setOption('maxit', 5)
 
         #[fstr, xstr, inform] = slsqp(self._opt_prob, sens_type='FD')
@@ -245,7 +248,7 @@ class TrajOptimizer:
 
         print('Condition number: {}'.format(fstr[0]))
         print('x: {}'.format(xstr))
-        #print('inform: ', inform)
+        print('inform: ', inform)
 
         # print self._opt_prob.solution(0)
 
