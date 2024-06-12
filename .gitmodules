@@ -1,0 +1,3 @@
+[submodule "external_package/pyOpt"]
+	path = external_package/pyOpt
+	url = https://github.com/JackHaoyingZhou/pyOpt.git
