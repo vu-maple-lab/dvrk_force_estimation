@@ -16,6 +16,13 @@ if __name__=="__main__":
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "-t",
+        "--trajectory-name",
+        type=str,
+        default='one',
+        help="trajectory name",
+    )
+    parser.add_argument(
         "-m",
         "--model-name",
         type=str,
@@ -35,6 +42,7 @@ if __name__=="__main__":
         help='specify if show the images'
     )
     args = parser.parse_args()
+    trajectory_name = args.trajectory_name
     model_name = args.model_name
     flag_long_print = args.long_print
     flag_show_img = args.show_image
@@ -42,8 +50,6 @@ if __name__=="__main__":
     model_folder = os.path.join(dynamic_path, 'data', model_name, 'model')
 
     robot_model = load_data(model_folder, model_name)
-
-    trajectory_name = 'one'
 
     trajectory_folder = os.path.join(dynamic_path, 'data', model_name, 'optimal_trajectory')
 
