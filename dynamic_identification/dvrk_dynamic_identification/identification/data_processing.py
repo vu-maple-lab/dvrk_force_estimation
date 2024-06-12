@@ -216,6 +216,33 @@ def diff_and_filt_data(dof, h, t, q_raw, dq_raw, tau_raw, fc_q, fc_tau, fc_dq, f
            q[cut_num:-cut_num, :], dq[cut_num:-cut_num, :], ddq[cut_num:-cut_num, :], tau[cut_num:-cut_num, :],\
            q_raw[cut_num:-cut_num, :], tau_raw[cut_num:-cut_num, :]
 
+def raw_data_cut(dof, h, t, q_raw, dq_raw, tau_raw, cut_num = 200):
+    q = np.zeros_like(q_raw)
+    dq = np.zeros_like(dq_raw)
+    ddq = np.zeros_like(dq_raw)
+    tau = np.zeros_like(tau_raw)
+
+    print('q_raw shape: {}'.format(q_raw.shape))
+    for i in range(dof):
+        q[:, i] = q_raw[:, i]
+
+        # joint_i_dq_raw = central_diff(q_raw[:, i], h, 2)
+        # dq[:, i] = butter_filtfilt(filter_order, wc_dq, joint_i_dq_raw)
+        dq[:, i] = dq_raw[:, i]
+
+        # joint_i_ddq_raw = central_diff(joint_i_dq_raw, h, 2)
+        joint_i_ddq_raw = central_diff(dq_raw[:, i], h, 2)
+        ddq[:, i] = joint_i_ddq_raw
+        # ddq[:,i] = central_diff( central_diff(q[:,i],h,2) ,h,2)
+
+        tau[:, i] = tau_raw[:, i]
+        # tau[:,i] = butter_lfilter( 3, wc_tau, tau_raw[:,i] )
+
+    return t[cut_num:-cut_num],\
+           q[cut_num:-cut_num, :], dq[cut_num:-cut_num, :], ddq[cut_num:-cut_num, :], tau[cut_num:-cut_num, :],\
+           q_raw[cut_num:-cut_num, :], tau_raw[cut_num:-cut_num, :]
+
+
 
 def plot_trajectory_data(t, q_raw, q_f, dq_f, ddq_f, tau_raw, tau_f):
     dof = q_raw.shape[1]
