@@ -7,3 +7,42 @@ We test two methods here
 
 ## This branch is about hybrid, model based (convex opt-based dynamics ID) plus model free (MLP based trocar correction).
 Details see ReadMe in the daVinci_system_id folder.
+
+## How to Install
+
+### Clone the Repository
+
+Firstly, git clone this repository with recursive submodule:
+
+```bash
+git clone --recursive https://github.com/vu-maple-lab/dvrk_force_estimation.git
+```
+
+Please make sure you have the option `--recursive` since it is required to clone the submodule as well.
+
+Then, head to the path of the cloned repository for the next step.
+
+```bash
+cd <dvrk_force_estimation>
+```
+
+### Install pyOpt
+
+```bash
+cd external_package
+cd pyOpt
+python setup.py install
+```
+
+Then, head to the path of the cloned repository for the next step.
+
+```bash
+cd <dvrk_force_estimation>
+```
+
+### Install local package `dvrk_dynamic_identification`
+
+```bash
+cd dynamic_identification
+pip3 install -e .
+```
