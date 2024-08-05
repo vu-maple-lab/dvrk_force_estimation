@@ -33,8 +33,19 @@ cd external_package
 cd pyOpt
 python setup.py install
 ```
+Note: in case pyOpt folder is empty, the recursive cloning has failed. You will need to update this submodule mannually. Try:
 
-Then, head to the path of the cloned repository for the next step.
+```bash
+git submodule update --recursive
+```
+
+Once pyOpt has the repo pulled, you can then install the submodule:
+
+```bash
+python setup.py install
+```
+
+Next, head to the path of the cloned repository for the next step.
 
 ```bash
 cd <dvrk_force_estimation>
