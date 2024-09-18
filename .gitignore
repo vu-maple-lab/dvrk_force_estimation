@@ -6,6 +6,5 @@ checkpoints/
 generated/
 direct_method/
 fsr/
-preprocess/
 .idea/
 indirect_method/plot_free_space.asv
