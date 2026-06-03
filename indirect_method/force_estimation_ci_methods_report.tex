@@ -1,0 +1,541 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.85in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\title{Force Estimation, Realtime Filtering, and Leak-Free Uncertainty Bands}
+\author{HSMR 2024 Effectiveness Force-Estimation Pipeline}
+\date{\today}
+
+\newcommand{\tauext}{\tau_{\mathrm{ext}}}
+\newcommand{\taumeas}{\tau_{\mathrm{meas}}}
+\newcommand{\taulstm}{\tau_{\mathrm{LSTM}}}
+\newcommand{\Fhat}{\hat{\bm F}}
+\newcommand{\tauhat}{\hat{\bm \tau}_{\mathrm{ext}}}
+
+\begin{document}
+\maketitle
+
+\section{Purpose}
+
+The goal is to estimate external wrench from motor torques and the robot model,
+then attach a confidence interval (CI) without using the force sensor to tune or
+compute that interval. The force sensor is used only for validation plots and
+RMSE/coverage checks.
+
+\begin{quote}
+\textbf{No knowledge leakage rule.} The measured force sensor signal is never
+used inside the uncertainty model. It is only used after estimation to compare
+against \(\Fhat\).
+\end{quote}
+
+\section{Signals and Main Force Equation}
+
+The LSTM predicts free-space joint torque. The measured motor torque contains
+free-space dynamics plus external-contact effects. The torque residual is
+
+\begin{equation}
+\bm y_k
+= \taumeas,k - \taulstm,k .
+\end{equation}
+
+Ideally,
+
+\begin{equation}
+\bm y_k \approx \tauext,k .
+\end{equation}
+
+Given a filtered external torque estimate \(\hat{\bm \tau}_{\mathrm{ext},k}\), the Cartesian wrench is
+computed using the Jacobian transpose relationship:
+
+\begin{equation}
+\hat{\bm \tau}_{\mathrm{ext},k} = J_k^\mathsf{T} \Fhat_k ,
+\end{equation}
+
+\begin{equation}
+\Fhat_k = J_k^{-\mathsf{T}} \hat{\bm \tau}_{\mathrm{ext},k}.
+\end{equation}
+
+The first three force channels are then rotated into the plotting frame using
+the same rotation used in the original MATLAB script:
+
+\begin{equation}
+\Fhat_{k,1:3}^{\mathrm{plot}}
+= R \Fhat_{k,1:3}.
+\end{equation}
+
+\section{Realtime Estimator Variants}
+
+All estimators operate in joint-torque space first. The force projection
+\(\Fhat = J^{-\mathsf{T}}\hat{\bm \tau}_{\mathrm{ext}}\) is applied after filtering.
+
+\subsection{Direct Residual}
+
+The simplest estimator uses the raw torque residual:
+
+\begin{equation}
+\hat{\bm \tau}_{\mathrm{ext},k} = \bm y_k .
+\end{equation}
+
+This is responsive but noisy and tends to preserve free-space false positives.
+
+\subsection{Paper-Style Residual Observer}
+
+The observer form discussed in the paper is
+
+\begin{equation}
+\dot{\bm r}
+= K_i(\hat{\tau}_{\mathrm{ext}} - \bm r).
+\end{equation}
+
+In discrete time, the implementation uses an exact first-order update:
+
+\begin{equation}
+\bm r_k
+= \alpha_k \bm r_{k-1}
++ (1-\alpha_k)\bm y_k,
+\end{equation}
+
+\begin{equation}
+\alpha_k = \exp(-K_i\Delta t_k).
+\end{equation}
+
+The force estimate uses
+
+\begin{equation}
+\hat{\bm \tau}_{\mathrm{ext},k} = \bm r_k .
+\end{equation}
+
+This is realtime and stable. Larger \(K_i\) gives faster tracking but less
+smoothing. The current tuned value is
+
+\begin{equation}
+K_i = 15~\mathrm{s}^{-1}.
+\end{equation}
+
+\subsection{Bias-Gated Observer}
+
+The bias-gated observer tries to avoid false contact detection by estimating a
+slow free-space bias only when the residual looks close to zero-contact:
+
+\begin{equation}
+\bm b_k \approx \text{slow bias in } \bm y_k .
+\end{equation}
+
+The corrected residual is
+
+\begin{equation}
+\tilde{\bm y}_k
+= \operatorname{deadband}(\bm y_k - \bm b_k).
+\end{equation}
+
+Then the observer is applied to \(\tilde{\bm y}_k\). In our tests, nonzero bias
+adaptation often worsened the result, so the practical setting has been
+
+\begin{equation}
+\text{bias gain} = 0.
+\end{equation}
+
+\subsection{Two-Time-Scale Observer}
+
+This method subtracts a slow free-space estimate from a fast observer:
+
+\begin{equation}
+\hat{\bm \tau}_{\mathrm{ext},k}
+= \operatorname{deadband}(\bm r^{\mathrm{fast}}_k
+- \bm r^{\mathrm{slow}}_k).
+\end{equation}
+
+The idea is sensible, but in the current data it did not clearly outperform the
+simpler tuned observer or the smooth-deadband methods.
+
+\subsection{Smooth Torque-Space Deadband}
+
+The most useful false-positive suppression came from applying a smooth
+per-joint deadband before filtering. For joint \(i\),
+
+\begin{equation}
+d_i
+= m \, s_i \, \sigma_{\tau,i},
+\end{equation}
+
+where \(m\) is the global deadband multiplier, \(s_i\) is a joint-specific
+multiplier, and \(\sigma_{\tau,i}\) is estimated from the available torque
+residual signal only.
+
+The smooth gate is
+
+\begin{equation}
+g_i(y)
+= \frac{1}
+{1 + \exp\left(-\frac{|y|-d_i}{w_i}\right)},
+\end{equation}
+
+\begin{equation}
+\tilde{y}_{i,k}
+= y_{i,k} g_i(y_{i,k}).
+\end{equation}
+
+For the dVRK-Si robot, joints 1--2 are noisier and joint 3 tends to
+underestimate in free space, so the current joint multipliers are
+
+\begin{equation}
+\bm s = [1,\;1,\;0.25,\;1,\;1,\;1].
+\end{equation}
+
+\subsection{Kalman Filter in Torque Space}
+
+The Kalman filter is implemented before the force projection. The state is the
+external joint torque:
+
+\begin{equation}
+\bm x_k = \tauext,k .
+\end{equation}
+
+The process model is a random walk:
+
+\begin{equation}
+\bm x_k = \bm x_{k-1} + \bm w_k,
+\qquad
+\bm w_k \sim \mathcal{N}(0,Q).
+\end{equation}
+
+The measurement is the LSTM torque residual:
+
+\begin{equation}
+\bm y_k
+= \taumeas,k - \taulstm,k
+= \bm x_k + \bm v_k,
+\qquad
+\bm v_k \sim \mathcal{N}(0,R).
+\end{equation}
+
+For each joint channel, the realtime Kalman recursion is
+
+\begin{align}
+P_{k|k-1} &= P_{k-1|k-1} + Q,\\
+K_k &= \frac{P_{k|k-1}}{P_{k|k-1}+R},\\
+\hat{x}_{k|k} &= \hat{x}_{k|k-1}
+  + K_k(y_k-\hat{x}_{k|k-1}),\\
+P_{k|k} &= (1-K_k)P_{k|k-1}.
+\end{align}
+
+The useful variant is not the raw Kalman filter alone, but
+\[
+\texttt{kalman\_smooth\_deadband},
+\]
+which first applies the smooth torque-space deadband and then applies the
+Kalman filter. This keeps the false-positive suppression and replaces the fixed
+observer gain with a probabilistic filter.
+
+\section{Uncertainty Model}
+
+The CI is leak-free: it uses motor torque residuals, the Jacobian, the estimated
+force, and the filter disagreement. It does not use measured force.
+
+\subsection{Torque-Side Noise Estimate}
+
+Torque residual noise is estimated from first differences:
+
+\begin{equation}
+\Delta \bm y_k = \bm y_k - \bm y_{k-1}.
+\end{equation}
+
+The per-joint robust standard deviation is
+
+\begin{equation}
+\sigma_{\tau,i}
+\approx
+\frac{1.4826\,\operatorname{median}
+\left(|\Delta y_i-\operatorname{median}(\Delta y_i)|\right)}
+{\sqrt{2}}.
+\end{equation}
+
+The factor \(\sqrt{2}\) appears because differencing two independent noisy
+samples doubles the variance.
+
+\subsection{Propagating Torque Uncertainty to Force}
+
+At each time step,
+
+\begin{equation}
+A_k = R_6 J_k^{-\mathsf{T}},
+\end{equation}
+
+where \(R_6\) applies the force-axis rotation to the first three wrench
+components. The propagated wrench variance is
+
+\begin{equation}
+\bm \sigma_{\mathrm{prop},k}^2
+= A_k^{\circ 2} \bm \sigma_\tau^{\,2},
+\end{equation}
+
+where \(A_k^{\circ 2}\) means elementwise squaring.
+
+\subsection{Low-Force Ambiguity}
+
+Near zero contact, the distinction between no contact, friction disturbance,
+and small external force is ambiguous. This is modeled with
+
+\begin{equation}
+s_F(|\Fhat_k|)
+= 1 + g_F \exp\left(-\frac{|\Fhat_k|}{F_0}\right).
+\end{equation}
+
+Current values:
+
+\begin{equation}
+g_F = 3.0,
+\qquad
+F_0 = 10~\mathrm{N}.
+\end{equation}
+
+\subsection{Observer/Direct Disagreement}
+
+The direct projected wrench is
+
+\begin{equation}
+\Fhat^{\mathrm{direct}}_k
+= J_k^{-\mathsf{T}}\bm y_k.
+\end{equation}
+
+The filtered estimate is
+
+\begin{equation}
+\Fhat^{\mathrm{filtered}}_k
+= J_k^{-\mathsf{T}}\hat{\bm \tau}_{\mathrm{ext},k}.
+\end{equation}
+
+Their disagreement is used as a model-risk term:
+
+\begin{equation}
+\bm \sigma_{\mathrm{disagree},k}
+= g_D
+\left|
+\Fhat^{\mathrm{direct}}_k
+- \Fhat^{\mathrm{filtered}}_k
+\right|.
+\end{equation}
+
+Current value:
+
+\begin{equation}
+g_D = 0.8.
+\end{equation}
+
+\subsection{Relative Force Uncertainty}
+
+Large forces should not become unrealistically certain. A relative calibration
+term is added:
+
+\begin{equation}
+\bm h_{\mathrm{rel},k}
+= g_R |\Fhat_{k,1:3}|.
+\end{equation}
+
+Current value:
+
+\begin{equation}
+g_R = 0.10.
+\end{equation}
+
+The \(F_z\) channel also receives an empirical dVRK-Si axis correction:
+
+\begin{equation}
+h_{z,k} \leftarrow g_z h_{z,k},
+\qquad
+g_z = 2.0.
+\end{equation}
+
+\subsection{Final 95\% Band}
+
+The final standard deviation estimate is
+
+\begin{equation}
+\bm \sigma_{F,k}
+=
+\sqrt{
+\left(s_F(|\Fhat_k|)\bm\sigma_{\mathrm{prop},k}\right)^2
++
+\bm\sigma_{\mathrm{disagree},k}^{\,2}
+}.
+\end{equation}
+
+The 95\% half-width is
+
+\begin{equation}
+\bm h_k
+= 1.96\,\bm\sigma_{F,k}.
+\end{equation}
+
+For the first three force channels, the relative term is combined as
+
+\begin{equation}
+\bm h_{k,1:3}
+\leftarrow
+\sqrt{
+\bm h_{k,1:3}^{\,2}
++
+\left(g_R|\Fhat_{k,1:3}|\right)^2
+}.
+\end{equation}
+
+Then the plotted confidence interval is
+
+\begin{equation}
+\Fhat_k - \bm h_k
+\leq
+\bm F_k
+\leq
+\Fhat_k + \bm h_k.
+\end{equation}
+
+A maximum plotted half-width is used for readability:
+
+\begin{equation}
+h_{i,k} \leq 12~\mathrm{N}.
+\end{equation}
+
+\section{Current Key Hyperparameters}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+Parameter & Current value & Meaning\\
+\midrule
+\(K_i\) & \(15~\mathrm{s}^{-1}\) & Observer speed\\
+Deadband multiplier & \(20\) & Torque residual suppression\\
+Joint deadband multipliers & \([1,1,0.25,1,1,1]\) & dVRK-Si joint-specific correction\\
+Kalman process scale & \(0.08\) & Higher tracks faster but is noisier\\
+Kalman measurement scale & \(1.0\) & Higher trusts residual less\\
+\(g_F\) & \(3.0\) & Low-force uncertainty inflation\\
+\(F_0\) & \(10~\mathrm{N}\) & Low-force decay scale\\
+\(g_D\) & \(0.8\) & Observer/direct disagreement uncertainty\\
+\(g_R\) & \(0.10\) & Relative force-scale uncertainty\\
+\(g_z\) & \(2.0\) & \(F_z\) axis uncertainty correction\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Validation Summary}
+
+On the current dataset, the useful Kalman variant is
+\[
+\texttt{kalman\_smooth\_deadband}.
+\]
+Pure Kalman filtering of the raw residual is worse, because the raw residual
+still contains free-space false positives and low-velocity friction/model
+disturbances. The smooth deadband remains important.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Method & \(F_x\) RMSE & \(F_y\) RMSE & \(F_z\) RMSE & Mean\\
+\midrule
+Raw Kalman, \(q=0.08\) & 2.4528 & 2.3832 & 1.4578 & 2.0979\\
+Smooth-deadband observer & 1.6700 & 1.6260 & 1.4385 & 1.5782\\
+Smooth-deadband Kalman, \(q=0.08\) & 1.6800 & 1.6266 & 1.4257 & 1.5775\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Interpretation: the Kalman-smooth method is essentially tied with the tuned
+observer overall, slightly improves \(F_z\), and slightly worsens \(F_x\). Its
+value is that the filter is more principled and tunable through \(Q/R\), while
+remaining realtime.
+
+\section{Plot Explanations}
+
+\subsection{Force Estimate With 95\% Confidence Bands}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{outputs_velocity_context/external_force_ci.png}
+\caption{Estimated force, force-sensor validation, and leak-free 95\% confidence
+bands for the active estimator. The force sensor validates performance but is
+not used to compute the band.}
+\end{figure}
+
+This plot answers whether the estimated force trajectory is plausible and
+whether the CI captures most validation force samples. Not every point must be
+covered by a 95\% interval. If whole contact events are outside the band, the
+centerline estimator or uncertainty model needs improvement.
+
+\subsection{CI Width Versus Estimated Contact Force}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{outputs_velocity_context/ci_width_vs_contact_force.png}
+\caption{Binned median CI half-width versus estimated force magnitude. This is
+a diagnostic plot, not a forced monotonic law.}
+\end{figure}
+
+The original expectation was that uncertainty should shrink as force grows. The
+current model is more nuanced:
+
+\begin{itemize}
+\item Near zero force, uncertainty is high because contact/no-contact is
+ambiguous.
+\item At moderate force, uncertainty can narrow.
+\item At large force, uncertainty may widen because relative calibration/model
+error grows with force magnitude.
+\end{itemize}
+
+Therefore, a mild U-shape or increasing high-force tail is expected when the
+relative uncertainty term is active.
+
+\subsection{Velocity Context for Force Uncertainty}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{outputs_velocity_context/velocity_with_force_uncertainty.png}
+\caption{Tool speed from \(J\dot q\) shown with smoothed force CI half-widths.
+This is a velocity-context plot, not a velocity confidence interval.}
+\end{figure}
+
+This plot helps address the advisor's concern: whether the force uncertainty is
+only a proxy for velocity. The conclusion from the current data is that velocity
+does affect some transient regions, especially fast teleoperation, but force CI
+width is not explained by velocity alone.
+
+\subsection{CI Width Versus Tool Speed}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{outputs_velocity_context/ci_width_vs_velocity.png}
+\caption{Binned median force CI half-width versus tool speed from \(J\dot q\).}
+\end{figure}
+
+If force uncertainty were purely velocity-driven, this plot would show a strong
+monotonic increase. Instead, the relationship is weak and channel-dependent.
+This suggests that force uncertainty comes from several sources: torque residual
+ambiguity, filtering disagreement, Jacobian projection, and axis-dependent
+model/calibration error.
+
+\section{Main Conclusions}
+
+\begin{enumerate}
+\item The force-estimation pipeline is realtime: torque residual filtering is
+causal, and force projection only requires the current Jacobian.
+\item The Kalman filter is feasible and principled, but raw Kalman filtering is
+not enough because the residual contains false-positive/free-space effects.
+\item The best Kalman-style method is smooth torque deadband followed by the
+Kalman filter.
+\item The uncertainty band is leak-free because it never uses force-sensor
+values during CI computation.
+\item The CI is not simply a velocity uncertainty band. Velocity provides useful
+context, but the force uncertainty is also driven by model/projection and
+filter-disagreement terms.
+\item A true velocity confidence interval would require a separate velocity
+noise model or repeated velocity measurements. The current velocity plots are
+diagnostics to disentangle velocity from force-estimation uncertainty.
+\end{enumerate}
+
+\end{document}
