@@ -10,7 +10,7 @@ all_sensor = np.array([])
 
 split = sys.argv[1]
 
-path = join('..', 'simon_trocar_feb_27', split)
+path = join('..', 'Data', split)
 
 sensor_path = join(path, 'sensor')
 cut_off = 100
@@ -33,7 +33,7 @@ start_time = np.max([sensor_time[0]])
 end_time = np.min([sensor_time[-1]])
 print(start_time, end_time)
 
-interpolated_time = np.arange(start_time, end_time, 0.05)
+interpolated_time = np.arange(start_time, end_time, 0.01)
 interp_sensor = np.zeros((interpolated_time.shape[0], 7))
 interp_sensor[:, 0] = interpolated_time
 

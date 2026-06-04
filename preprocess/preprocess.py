@@ -9,16 +9,18 @@ all_joints = np.array([])
 all_jacobian = np.array([])
 all_jaw = np.array([])
 
+#python3 preprocess.py test_csv
+
 split = sys.argv[1]
 
-path = join('..', 'simon_trocar_feb_27', split)
+path = join('..', 'Data', split)
 
 joint_path = join(path, 'joints')
 jacobian_path = join(path, 'jacobian')
 jaw_path = join(path, 'jaw')
 cut_off = 100
 
-for cur_file in os.listdir(joint_path):
+for cur_file in sorted(f for f in os.listdir(joint_path) if f.endswith('.csv') and not f.startswith('interpolated')):
     joints = np.loadtxt(join(joint_path, cur_file), delimiter=',')
     end_idx = int(joints.shape[0] / cut_off)
     joints = joints[0:end_idx * cut_off, :]
@@ -50,11 +52,11 @@ jacobian_time = all_jacobian[:, 0] - all_joints[0, 0]
 joint_time = all_joints[:, 0] - all_joints[0, 0]
 jaw_time = all_jaw[:, 0] - all_joints[0, 0]
 
-start_time = np.max([joint_time[0], jacobian_time[0]])
-end_time = np.min([joint_time[-1], jacobian_time[-1]])
+start_time = np.max([joint_time[0], jacobian_time[0], jaw_time[0]])
+end_time = np.min([joint_time[-1], jacobian_time[-1], jaw_time[-1]])
 print(start_time, end_time)
 
-interpolated_time = np.arange(start_time, end_time, 0.05)
+interpolated_time = np.arange(start_time, end_time, 0.01)
 
 interp_joints = np.zeros((interpolated_time.shape[0], 19))
 interp_joints[:, 0] = interpolated_time

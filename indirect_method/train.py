@@ -21,16 +21,19 @@ data = sys.argv[1]
 
 arm = sys.argv[3]
 
-train_path = join('..', '..', 'dvrk_colon_9_26', 'bilateral_free_space_sep_27', 'train', arm, data)
-val_path = join('..', '..', 'dvrk_colon_9_26', 'bilateral_free_space_sep_27', 'val', arm, data)
-root = Path('../..')
+#python train.py free_space lstm PSM1 ../Data/All_trajectory_Collection/data_7_2_1/
+
+data_root  = sys.argv[4] if len(sys.argv) > 4 else join('..', 'Data')
+train_path = join(data_root, 'train_csv') 
+val_path   = join(data_root, 'val_csv') 
+root = Path('..')
 network_architecture = sys.argv[2]
 folder = network_architecture + '/' + arm + '/' + data
 range_torque = torch.tensor(max_torque).to(device)
 
 lr = 1e-3  # TODO
 batch_size = 131072
-epochs = 700
+epochs = 2000
 validate_each = 5
 use_previous_model = False
 epoch_to_use = 40  # TODO
@@ -65,7 +68,7 @@ for j in range(JOINTS):
 
     networks[j].to(device)
     optimizers.append(torch.optim.Adam(networks[j].parameters(), lr))
-    schedulers.append(ReduceLROnPlateau(optimizers[j], verbose=True))
+    schedulers.append(ReduceLROnPlateau(optimizers[j]))
 
 train_dataset = indirectDataset(train_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)
 val_dataset = indirectDataset(val_path, window, SKIP, in_joints, is_rnn=is_rnn, filter_signal=f)

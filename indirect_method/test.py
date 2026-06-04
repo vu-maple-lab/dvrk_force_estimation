@@ -8,6 +8,13 @@ from pathlib import Path
 from torch.utils.data import DataLoader
 from dataset import indirectTestDataset, indirectDataset
 
+#mkdir -p ~/filtered_torque_colon_9_26/lstm/PSM1
+# cd ~/dvrk_force_estimation/indirect_method
+# python3 train.py free_space lstm PSM1
+
+#python3 test.py test lstm seal PSM1
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 contact = 'no_contact'
 data = 'free_space'
@@ -27,7 +34,7 @@ if is_rnn:
     batch_size = 1
 else:
     batch_size = 8192
-root = Path('../..')
+root = Path('..')
 
 fs = 'no_cannula'
 if seal == 'seal':
@@ -38,16 +45,40 @@ print('device is: ', device)
 
 ATTN_nhead=1
 
+# Coordinate transform
+flip_y_axis  = np.diag([-1.0, -1.0, 1.0])
+basis        = np.array([[ 0,  0, -1],
+                          [ 0,  1,  0],
+                          [ 1,  0,  0]], dtype=float)
+angle_z      = np.deg2rad(-30)
+Rz_x         = np.array([[np.cos(angle_z), -np.sin(angle_z), 0],
+                          [np.sin(angle_z),  np.cos(angle_z), 0],
+                          [0,                0,               1]], dtype=float)
+Rx_minus_45  = np.array([[1,  0,      0     ],
+                          [0,  0.7071, 0.7071],
+                          [0, -0.7071, 0.7071]], dtype=float)
+rotated      = Rz_x @ Rx_minus_45 @ flip_y_axis
+T_transpose  = np.linalg.inv(rotated) @ basis
+
+axis_correction = np.array([[ 0,  1,  0],
+                              [-1,  0,  0],
+                              [ 0,  0,  1]], dtype=float)
+
+
+def apply_coord_transform(force_np):
+    """Apply robot->sensor coordinate transform to force columns (N,3)."""
+    f = force_np @ T_transpose
+    f = (axis_correction @ f.T).T
+    return f
+
 def main():
     all_pred = None
     if exp == 'train':
-        path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/train/' + arm + '/' + data + '/'
+        path = '../Data/train_csv/'
     elif exp == 'val':
-        path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/val/' + arm + '/' + data + '/'
+        path = '../Data/val_csv/'
     elif exp == 'test':
-        # path = '../../csv_si/test/' + data + '/no_contact/'
-        # path = '../../dvrk_colon_9_26/bilateral_free_space_sep_27/test/' + arm + '/' + data + '/'
-        path = '../../dvrk_colon_9_26/colon_exp_sep_26/trial_4/' + arm + '/' + data + '/'
+        path = '../Data/test_csv/'
     else:
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
         path = '../../csv/test/' + data + '/' + contact + '/' + exp + '/'
